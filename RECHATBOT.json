@@ -1,0 +1,290 @@
+{
+  "id": "5AVHQCf6dHelWBYq",
+  "meta": {
+    "instanceId": "e0a17b2ba0e05724bed958a326c256befe19ed7fc877d0fdfe41ad323c43f73d"
+  },
+  "name": "Prop_workflow",
+  "tags": [],
+  "nodes": [
+    {
+      "id": "d1147020-69b9-4f81-be58-8e37e78e5832",
+      "name": "LLM conversation",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        -240,
+        860
+      ],
+      "parameters": {
+        "text": "={{ $json.originalMessage }}",
+        "options": {
+          "systemMessage": "=You are a real estate assistant named PropPanda. You MUST follow this EXACT step-by-step workflow with intelligent information extraction:\n\n## CONTENT FILTER (FIRST PRIORITY)\n\nIMMEDIATE CHECK: Before any other processing, check if the user's message is related to real estate services:\n\nALLOWED TOPICS:\n- Property rental/purchase inquiries (HDB, condo, apartment)\n- Location preferences and property searches\n- Budget discussions for properties\n- Viewing appointments and property tours\n- Nearby amenities (MRT, schools, restaurants)\n- Human agent requests for property matters\n\nFORBIDDEN TOPICS - END CONVERSATION GRACEFULLY:\n- Adult/sexual content, escort services\n- Non-property services (food delivery, transport, medical, technical support)\n- Spam, advertisements, investment schemes\n- Personal conversations unrelated to property\n- Any illegal or inappropriate requests\n\nIF FORBIDDEN TOPIC DETECTED:\nRespond: \"I'm sorry, but I can only assist with property-related inquiries such as finding HDB flats, condos, or apartments for rent or purchase. If you have any property questions, I'd be happy to help! Otherwise, have a great day.\"\nSTOP ALL PROCESSING AND WAIT FOR NEW MESSAGE\n\n---\n\n## INFORMATION EXTRACTION SYSTEM\n\nALWAYS FIRST: Before asking any questions, scan the user's message for ANY of the following information and save what you find:\n\nPersonal Information Keywords:\n- Name: \"I am [name]\", \"my name is [name]\", \"name is [name]\", or any clear name introduction\n- Phone: Phone numbers (8-12 digits, with or without country codes, +65, etc.)\n- Email: Email addresses (any text containing @ symbol with domain)\n\nProperty Requirements Keywords:\n- Type: \"HDB\", \"condo\", \"condominium\", \"apartment\", \"flat\", \"studio\"\n- Location: \"near [location]\", \"in [area]\", \"[district name]\", \"around [place]\"\n- Budget: Any number followed by \"budget\", \"price range\", \"afford\", \"$\", \"SGD\", currency mentions\n- Timeline: Months/years like \"June 2025\", \"next month\", \"ASAP\", \"immediately\", \"by [date]\"\n- Citizenship: \"citizen\", \"PR\", \"permanent resident\", \"foreigner\", \"non-citizen\", \"expat\"\n\nEXTRACTION EXAMPLES:\n- \"I am John looking for condo near Newton, budget 2500\" → Extract: name=John, type=condo, location=near Newton, budget=2500\n- \"My name is Sarah, phone 91234567, need HDB in Tampines by March 2025\" → Extract: name=Sarah, phone=91234567, type=HDB, location=Tampines, timeline=March 2025\n\n---\n\n## WORKFLOW STEPS\n\nSTEP 1: HUMAN AGENT HANDOFF (PRIORITY CHECK)\n\nFIRST, check if user message contains any of these keywords/phrases:\n- \"human agent\", \"talk to human\", \"speak to agent\", \"connect me to agent\", \"real person\", \"live agent\", \"customer service\", \"speak to someone\"\n\nIF DETECTED:\n- Check personal details completeness (name, phone, email)\n- IF MISSING personal details:\n  - Respond: \"I'd be happy to connect you with one of our human agents! To ensure they can contact you, I'll need a few details first.\"\n  - COLLECT ONLY missing information sequentially (skip already provided):\n    - If name missing: \"Could you please provide your Full Name?\"\n    - If phone missing: \"What's your Phone Number?\"\n    - If email missing: \"What's your Email Address?\"\n  - After collecting missing details, IMMEDIATELY ask for message:\n    - \"Thank you! Now, what specific message would you like me to pass on to our human agent?\"\n    - STOP and WAIT for user's message response - DO NOT PROCEED until user provides their message\n  \n- IF personal details already available:\n  - Immediately ask: \"What specific message would you like me to pass on to our human agent?\"\n  - STOP and WAIT for user's message response - DO NOT PROCEED until user provides their message\n  \n- ONLY AFTER receiving user's message:\n  - THEN use Human agent tool with this format:\n    - Subject: \"Customer Handoff Request - {name}\"\n    - Email Content: \n      \n      Customer Details:\n      - Name: {name}\n      - Phone: {phone}\n      - Email: {email}\n      \n      Customer Message: {user_message}\n      \n      Property Requirements (if any collected):\n      {include any property requirements already gathered}\n      \n  - AFTER sending email, confirm: \"Thank you! I've forwarded your message to our human agent. They will contact you within 2 days at {email} or {phone}.\"\n  - STOP workflow and wait for user response\n\nIF NOT DETECTED, continue to Step 2\n\nSTEP 2: COLLECT PERSONAL INFORMATION\n\nAfter extracting available personal info:\n- Mental checklist: [name: ✓/✗] [phone: ✓/✗] [email: ✓/✗]\n- ONLY ask for missing information in this exact order:\n  - If name missing: \"Could you please provide your Full Name?\"\n  - If phone missing: \"What's your Phone Number?\"\n  - If email missing: \"What's your Email Address?\"\n- SKIP questions for already provided information\n- VALIDATE inputs:\n  - Phone: Must be 8-12 digits\n  - Email: Must contain @ and domain\n- NO CONFIRMATION STEP - proceed directly after collecting all personal details\n\nSTEP 3: COLLECT PROPERTY REQUIREMENTS\n\nAfter extracting available property requirements:\n- Mental checklist: [type: ✓/✗] [locations: ✓/✗] [budget: ✓/✗] [timeline: ✓/✗] [citizenship: ✓/✗]\n- ONLY ask for missing information in this exact order:\n  - If type missing: \"What Property Type are you looking for? (HDB / Condo / Apartment)\"\n  - If locations missing: \"What are your Preferred Locations or Districts?\"\n  - If budget missing: \"What's your Budget range?\"\n  - If timeline missing: \"When is your preferred Move-in Timeline?\"\n  - If citizenship missing: \"What's your Citizenship Status? (Singapore Citizen / PR / Foreigner)\"\n- SKIP questions for already provided information\n- NO CONFIRMATION STEP - proceed directly after collecting all requirements\n\nSTEP 4: FINAL JSON OUTPUT\nAfter collecting all information:\njson\n{\n\"personal_details\": {\n\"name\": \"{name}\",\n\"phone\": \"{phone}\",\n\"email\": \"{email}\"\n},\n\"properties\": {\n\"type\": \"{type}\",\n\"locations\": \"{locations}\",\n\"budget\": \"{budget}\",\n\"timeline\": \"{timeline}\",\n\"citizenship\": \"{citizenship}\"\n}\n}\n\n\nSTEP 5: PROPERTY SEARCH & DISPLAY\n- Use property search system to find matching properties based on collected requirements\n- Display properties with details such as:\n  - Property name/address\n  - Price/rent\n  - Property features (bedrooms, bathrooms, size, etc.)\n  - Property images if available\n  - Contact information or listing details\n\n\nSTEP 6: APPOINTMENT BOOKING\nAsk: \"Would you like to schedule a viewing for any of these properties?\"\n\nIf yes:\n- Ask: \"Could you please suggest a preferred date for the appointment?\"\n- Wait for user's date suggestion\n- Use get_Calendar tool to check availability for that date\n- IF NO SLOTS AVAILABLE: \"I'm sorry, but that date isn't available. Could you please suggest another date for the appointment?\"\n- IF AVAILABLE: Confirm the slot and send Gmail confirmation\n\n---\n\n## CRITICAL RULES\n\n1. CONTENT FILTER FIRST: Always check for non-property inquiries before any other processing\n2. EXTRACT FIRST, ASK LATER: Always scan user messages for information before asking questions\n3. NO REDUNDANT QUESTIONS: Never ask for information the user already provided\n4. NO CONFIRMATIONS: Skip confirmation steps to avoid repetition\n5. SEQUENTIAL COLLECTION: Ask for missing information in exact specified order\n6. HANDLE BULK RESPONSES: If user provides multiple pieces of info in one response, extract all of it\n7. VALIDATION: Ensure phone numbers and emails are properly formatted\n8. USER-SUGGESTED DATES: Always ask user to suggest appointment dates instead of checking next 3 days\n9. HUMAN AGENT MESSAGE MANDATORY: For human agent requests, NEVER send email without first collecting the user's specific message. Always ask \"What specific message would you like me to pass on to our human agent?\" and WAIT for response before proceeding.\n\n## CONVERSATION MEMORY\n- Track what information has been provided to avoid repetition\n- Remember user's previous responses in the same conversation\n- Don't re-ask questions that were already answered\n\n## AVAILABLE TOOLS\n- Property Search System: For finding and displaying properties based on user requirements  \n- Gmail: For appointment confirmations\n- get_Calendar: For checking available slots on user-suggested dates\n- Human agent: For customer handoff requests\n\nUser input: {{ $json.originalMessage }}"
+        },
+        "promptType": "define"
+      },
+      "typeVersion": 1.9
+    },
+    {
+      "id": "301553ac-7c05-4ca9-a4d9-03ac5209ab69",
+      "name": "PostgreSQL Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "position": [
+        -240,
+        1120
+      ],
+      "parameters": {
+        "tableName": "user_details",
+        "sessionKey": "=harshassession123098456",
+        "sessionIdType": "customKey",
+        "contextWindowLength": 5000
+      },
+      "typeVersion": 1.3
+    },
+    {
+      "id": "ded5c99e-7b47-4b02-8a4b-66bad2da9a95",
+      "name": "Parse Data",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        340,
+        780
+      ],
+      "parameters": {
+        "jsCode": "// Initialize default data structure\nlet data = {\n  personal: {\n    name: null,\n    phone: null,\n    email: null\n  },\n  property: {\n    type: null,\n    locations: null,\n    budget: null,\n    timeline: null,\n    citizenship: null\n  }\n};\n\n// Get input from webhook\nconst input = $input.first();\nif (!input || !input.json) {\n  return [{\n    json: {\n      sessionId: 'unknown',\n      personal: data.personal,\n      property: data.property,\n      ready: false\n    }\n  }];\n}\n\nconst sessionId = input.json.sessionId || 'unknown';\nconst rawText = input.json.output || '';\n\n// Attempt to parse JSON from text\ntry {\n  const jsonMatch = rawText.match(/{[\\s\\S]*}/);\n  const jsonString = jsonMatch ? jsonMatch[0] : '{}';\n  const parsedData = JSON.parse(jsonString);\n\n  // Personal info\n  if (parsedData.personal_details) {\n    data.personal.name = parsedData.personal_details.name || null;\n    data.personal.phone = parsedData.personal_details.phone || null;\n    data.personal.email = parsedData.personal_details.email || null;\n  }\n\n  // Property info\n  if (parsedData.properties) {\n    data.property.type = parsedData.properties.type || null;\n    data.property.timeline = parsedData.properties.timeline || null;\n    data.property.citizenship = parsedData.properties.citizenship || null;\n\n    // Clean \"locations\" value to extract just the MRT name\n    if (parsedData.properties.locations) {\n      data.property.locations = parsedData.properties.locations\n        .replace(/(near|beside|around|next to|opposite|close to)\\s+/gi, '')\n        .trim();\n    }\n\n    // Robust budget parsing (handles SGD 2,500 / $2500 / 2500 SGD etc.)\n    if (parsedData.properties.budget) {\n      const rawBudget = parsedData.properties.budget;\n      const cleanedBudget = rawBudget.replace(/[^\\d]/g, '');\n      data.property.budget = cleanedBudget ? parseInt(cleanedBudget, 10) : null;\n    }\n  }\n} catch (e) {\n  console.error('Error parsing JSON data:', e.message);\n}\n\n// Check readiness\nconst ready = Boolean(data.personal.name && data.personal.phone && data.personal.email);\n\n// Final output\nreturn [{\n  json: {\n    sessionId,\n    personal: data.personal,\n    property: data.property,\n    ready\n  }\n}];\n"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "caf89764-2c6f-43c7-8610-8db27d500b5f",
+      "name": "Save Personal Info",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        740,
+        920
+      ],
+      "parameters": {
+        "query": "INSERT INTO user_info (name, phone_number, email) VALUES ($1, $2, $3)",
+        "options": {
+          "queryReplacement": "={{ $('Parse Data').item.json.personal.name }}{{ $('Parse Data').item.json.personal.phone }}{{ $('Parse Data').item.json.personal.email }}{{ $('Parse Data').item.json.sessionId }}"
+        },
+        "operation": "executeQuery"
+      },
+      "typeVersion": 2.6
+    },
+    {
+      "id": "c6f368f7-d0f3-4d2c-93bd-b1c0fa982ffc",
+      "name": "Query Properties",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        600,
+        1040
+      ],
+      "parameters": {
+        "query": "SELECT * FROM \"new_properties\"\nWHERE \"Property Type\" ILIKE '%' || $1 || '%'\n  AND \"Nearest MRT\" ILIKE '%' || $2 || '%'\n  AND \"Rental Price (SGD/month)\" <= CAST(regexp_replace($3, '[^0-9]', '', 'g') AS bigint)\nORDER BY \"Rental Price (SGD/month)\" ASC\nLIMIT 5;\n\n",
+        "options": {
+          "queryReplacement": "={{ $json.property.type }}{{ $json.property.locations }}{{ $json.property.budget }}"
+        },
+        "operation": "executeQuery"
+      },
+      "credentials": {
+        "postgres": {
+          "id": "Y3Im9kfoKd4hu5NL",
+          "name": "Postgres letchu"
+        }
+      },
+      "typeVersion": 2.6
+    },
+    {
+      "id": "8f1e928d-c0e1-42cd-bc7a-93f630e4256e",
+      "name": "Ready Check",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        320,
+        1060
+      ],
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.ready }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "6841173f-de6c-476a-a343-dbc84bf528e9",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [
+        -360,
+        1080
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4",
+          "cachedResultName": "gpt-4"
+        },
+        "options": {
+          "temperature": 0
+        }
+      },
+      "typeVersion": 1.2
+    },
+    {
+      "id": "2acc09f6-d9bb-43f5-8045-35394f6384c5",
+      "name": "Format Results with AI",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        1120,
+        940
+      ],
+      "parameters": {
+        "text": "={{ $json }}",
+        "options": {
+          "systemMessage": "=You are a professional real estate assistant. Your task is to format property search results into a natural, engaging response for users.\n\nGiven property data, create a personalized response that:\n1. Acknowledges their search criteria\n2. Presents the properties in an organized, easy-to-read format\n3. Highlights key features like location, price, and property type\n4. Includes a friendly closing with next steps\n\nFormat each property with:\n- Property name/address\n- Property type\n- Monthly rental price\n- Key location details (nearest MRT, district)\n- Brief description of features\n- Include any image urls \n\nKeep the tone professional yet friendly, and make it easy for users to compare options.\n\n\nUser's search criteria: {{ $('Parse Data').item.json.property.type }} in {{ $('Parse Data').item.json.property.locations }} with budget {{ $('Parse Data').item.json.property.budget }}\nProperty results: {{ $json }} "
+        },
+        "promptType": "define"
+      },
+      "typeVersion": 1.9
+    },
+    {
+      "id": "ee223706-e6d3-4891-94e0-3005d7a06a38",
+      "name": "Format Response",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1480,
+        940
+      ],
+      "parameters": {
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "format-response-field",
+              "name": "text",
+              "type": "string",
+              "value": "={{ $json.output }}"
+            }
+          ]
+        }
+      },
+      "typeVersion": 3.4
+    },
+    {
+      "id": "450403d8-776c-4359-890a-9729930c037a",
+      "name": "Send Formatted Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        1700,
+        840
+      ],
+      "parameters": {
+        "options": {},
+        "respondWith": "allIncomingItems"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "650470f7-abfa-41f0-8746-947ad102b6a2",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        -780,
+        880
+      ],
+      "webhookId": "d22c99cc-a257-4c69-9419-34bb82a14026",
+      "parameters": {
+        "path": "d22c99cc-a257-4c69-9419-34bb82a14026",
+        "options": {},
+        "httpMethod": "POST",
+        "responseMode": "responseNode"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "54ebd3c9-d3a9-46c0-99da-2e3a734459e0",
+      "name": "SerpAPI",
+      "type": "@n8n/n8n-nodes-langchain.toolSerpApi",
+      "position": [
+        -20,
+        1320
+      ],
+      "parameters": {
+        "options": {}
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "295a3776-061c-4324-8639-af282d771072",
+      "name": "update_Calendar",
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "position": [
+        2280,
+        1600
+      ],
+      "parameters": {
+        "eventId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Event_ID', ``, 'string') }}",
+        "calendar": {
+          "__rl": true,
+          "mode": "list",
+          "value": "e3ce404900cffc797cca497fa68efabe30620d0b30b96ff59b64e5b25dfc226b@group.calendar.google.com",
+          "cachedResultName": "ABA"
+        },
+        "operation": "update",
+        "updateFields": {}
+      },
+      "typeVersion": 1.3
+    },
+    {
+      "id": "d39c473d-4ee8-49af-84c9-07e5b2c89fac",
+      "name": "OpenAI Chat Model1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [
+        1880,
+        1600
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "typeVersion": 1.2
+    },
+    {
+      "id": "f0ad8e3e-6974-4f99-a271-96173bee391d",
+      "name": "Gmail1",
+      "type": "n8n-nodes-base.gmailTool",
+      "position": [
+        2420,
+        1600
+      ],
+      "webhookId": "c26a9667-558f-4568-8f1a-59c5c55d58dd",
+      "parameters": {
+        "sendTo": "={{ $('Gmail Trigger').item.json.from.value[0].address }}",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {
+          "replyTo": "={{ $('Gmail Trigger').item.json.from.value[0].address }}"
+        },
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "emailType": "text"
+      },
+      "typeVersion": 2.1
+    },
+    {
+      "id": "5157dd53-2ffd-49a5-80e8-893acc8a80bb",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        2160,
+        1380
+      ],
+      "parameters": {
+        "text": "={{ $json.html }}",
+        "options": {
+          "systemMessage": "=You are a helpful assistantYou are an intelligent appointment management assistant that processes email communications to handle appointment confirmations, modifications, and scheduling. Your primary responsibilities include managing calendar events and maintaining clear communication with clients. \nwhenever creating or updating a appointment add title and other details including the name of the user\nmake use of create_Calender, update_Calender, get_Calender and gmail1 node\nget the event id from Google Calendar1 node\nCore Functions\n1. Appo
