@@ -1,0 +1,694 @@
+{
+  "id": "W8cNJXxPgBStJGT9",
+  "meta": {
+    "instanceId": "1c262716821ea2650dac3177f9ad82ec17728569a6c7be365abb2776d5d0867d"
+  },
+  "name": "WhatsApp AI Agent for Restaurants (Delivery)",
+  "tags": [],
+  "nodes": [
+    {
+      "id": "fbaea2b1-8a98-4114-8243-1e10d08d7a4c",
+      "name": "OpenAI Chat Model2",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [
+        48,
+        832
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "ZNNVcWV7IhlWKcvj",
+          "name": "OpenAi account Rodrigo"
+        }
+      },
+      "typeVersion": 1.2
+    },
+    {
+      "id": "6148e121-f043-438b-ab50-fdf6c09fbda1",
+      "name": "Postgres Chat Memory1",
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "position": [
+        208,
+        816
+      ],
+      "parameters": {
+        "sessionKey": "={{ $('Message Received').item.json.messages[0].from }}",
+        "sessionIdType": "customKey",
+        "contextWindowLength": 300
+      },
+      "credentials": {
+        "postgres": {
+          "id": "cR2RyvCPoqUwfa30",
+          "name": "Postgres account Rodrigo con Supabase"
+        }
+      },
+      "typeVersion": 1.3
+    },
+    {
+      "id": "b0039654-d346-4e24-8236-3385b78862b4",
+      "name": "Wait",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        848,
+        560
+      ],
+      "webhookId": "8dca9493-78df-4cd9-8ee4-89cfee72752b",
+      "parameters": {
+        "amount": 0
+      },
+      "typeVersion": 1.1
+    },
+    {
+      "id": "c083f637-1338-4511-bd58-2bd558c7adc1",
+      "name": "Google Maps",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        -1056,
+        688
+      ],
+      "parameters": {
+        "url": "=https://maps.googleapis.com/maps/api/geocode/json?latlng={{ $json.messages[0].location.latitude }},{{ $json.messages[0].location.longitude }}&key=YOUR_APIKEY\n",
+        "options": {}
+      },
+      "typeVersion": 4.2
+    },
+    {
+      "id": "e8b3b788-8703-4380-89ae-9d906c0950f9",
+      "name": "Code",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1200,
+        80
+      ],
+      "parameters": {
+        "jsCode": "// Get structured data from output\nconst data = $input.first().json.output;\n\n// Extract each field directly from JSON object\nconst customer = data.customer_name;\nconst orderType = data.order_type;\nconst refNumber = data.reference_number;\nconst paymentMethod = data.payment_method;\nconst address = data.address;\nconst latitude = data.latitude;\nconst longitude = data.longitude;\nconst shippingCost = data.shipping_cost;\nconst finalTotal = data.final_total;\n\n// Process product list\nconst orderText = data.products.map(product => {\n  return `${product.name} – Bs ${product.price}`;\n}).join('\\n');\n\n// Create final message with desired format\nconst order_message = `🍝 *NEW ORDER -[RESTAURANT_NAME]* 🇮🇹\n👤 *Customer:* ${customer}\n📞 *Phone:* ${refNumber}\n🚀 *Type:* ${orderType}\n💳 *Payment:* ${paymentMethod}\n📍 *Location:* ${address}\n📍 *Latitude:* ${latitude}\n📍 *Longitude:* ${longitude}\n📋 *ORDER:*\n${orderText}\n🚚 *Shipping cost:* ${shippingCost} Bs\n🧾 *Total:* ${finalTotal}Bs\n💭 *Comments:*\n⏰ *Time:* ${new Date().toLocaleString('en-US', { timeZone: '[YOUR_TIMEZONE]' })}`;\n\n// Return result\nreturn {\n  order_message: order_message\n};"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "112bbd41-8677-42cc-b37c-264b111e6b4a",
+      "name": "WhatsApp Business Cloud2",
+      "type": "n8n-nodes-base.whatsApp",
+      "position": [
+        1216,
+        1088
+      ],
+      "webhookId": "53847e40-a8a0-43f4-a41c-e218c097ff0d",
+      "parameters": {
+        "mediaPath": "useMedian8n",
+        "operation": "send",
+        "messageType": "image",
+        "phoneNumberId": "={{ $('Message Received').item.json.metadata.phone_number_id }}",
+        "additionalFields": {},
+        "recipientPhoneNumber": "={{ $('Message Received').item.json.messages[0].from }}"
+      },
+      "credentials": {
+        "whatsAppApi": {
+          "id": "7rMPI0CcyqqjedhR",
+          "name": "WhatsApp account FASTA"
+        }
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "e3f68073-7d17-4996-ac03-7dfa83c5b743",
+      "name": "Download Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        -880,
+        144
+      ],
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {},
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "PZefPgHGkREf4iN0",
+          "name": "Header Auth account WhatsApp FASTA"
+        }
+      },
+      "typeVersion": 4.2
+    },
+    {
+      "id": "1d392362-aea6-4ada-bbb1-8075fafea9d9",
+      "name": "Get Image Url",
+      "type": "n8n-nodes-base.whatsApp",
+      "position": [
+        -1056,
+        144
+      ],
+      "webhookId": "7eb58296-2363-429c-abab-7f2e6c29ade2",
+      "parameters": {
+        "resource": "media",
+        "operation": "mediaUrlGet",
+        "mediaGetId": "={{ $('Message Received').item.json.messages[0].image.id }}"
+      },
+      "credentials": {
+        "whatsAppApi": {
+          "id": "7rMPI0CcyqqjedhR",
+          "name": "WhatsApp account FASTA"
+        }
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "3ad70b86-ca31-4613-a1b5-799032ca3fff",
+      "name": "Image",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        -432,
+        144
+      ],
+      "parameters": {
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "67552183-de2e-494a-878e-c2948e8cb6bb",
+              "name": "text",
+              "type": "string",
+              "value": "=Image description:\n{{ $json.content }}"
+            }
+          ]
+        }
+      },
+      "typeVersion": 3.4
+    },
+    {
+      "id": "b8077628-7900-42b1-b579-d0fd6228c5a8",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1120,
+        96
+      ],
+      "parameters": {
+        "color": 4,
+        "width": 1060,
+        "height": 220,
+        "content": "## Recognize Image Type Receipts"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "2bcf817b-57ea-4ba6-9854-e18b65baebd5",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        464
+      ],
+      "parameters": {
+        "width": 720,
+        "height": 540,
+        "content": "## Chat with customer about order\n"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "3d37a734-7f4d-48b9-bb24-c732c633baec",
+      "name": "Download Audio",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        -848,
+        912
+      ],
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {},
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "PZefPgHGkREf4iN0",
+          "name": "Header Auth account WhatsApp FASTA"
+        }
+      },
+      "typeVersion": 4.2
+    },
+    {
+      "id": "0bc6800c-4eb0-4549-85a0-c466bbf35894",
+      "name": "Transcribe Audio",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "position": [
+        -656,
+        912
+      ],
+      "parameters": {
+        "options": {},
+        "resource": "audio",
+        "operation": "transcribe"
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "ZNNVcWV7IhlWKcvj",
+          "name": "OpenAi account Rodrigo"
+        }
+      },
+      "typeVersion": 1.8
+    },
+    {
+      "id": "2e6216f3-cbd2-4897-bead-db7944280b7f",
+      "name": "Audio",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        -480,
+        912
+      ],
+      "parameters": {
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "219577d5-b028-48fc-90be-980f4171ab68",
+              "name": "text",
+              "type": "string",
+              "value": "={{ $json.text }}"
+            }
+          ]
+        }
+      },
+      "typeVersion": 3.4
+    },
+    {
+      "id": "d1400646-8429-4516-aed1-c99660f0daa7",
+      "name": "Get Audio Url",
+      "type": "n8n-nodes-base.whatsApp",
+      "position": [
+        -1040,
+        912
+      ],
+      "webhookId": "761cfe95-c1e8-4a29-aac1-091e9241454d",
+      "parameters": {
+        "resource": "media",
+        "operation": "mediaUrlGet",
+        "mediaGetId": "={{ $('Message Received').item.json.messages[0].audio.id }}"
+      },
+      "credentials": {
+        "whatsAppApi": {
+          "id": "4IdzQkn96wTOyXsv",
+          "name": "WhatsApp account Romar AI"
+        }
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "0ec520fa-5ee1-4115-ad65-b27e7dedf587",
+      "name": "Text",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        -704,
+        560
+      ],
+      "parameters": {
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c53cd9f9-77c1-4331-98ff-bfc9bdf95a3c",
+              "name": "text",
+              "type": "string",
+              "value": "={{ $('Message Received').item.json.messages[0].text.body }}"
+            }
+          ]
+        }
+      },
+      "typeVersion": 3.4
+    },
+    {
+      "id": "4d1b23c4-14dd-4b4e-abf2-13196eca47bb",
+      "name": "Location",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        -896,
+        688
+      ],
+      "parameters": {
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f8d40eb6-8c0f-4dac-af88-7d00fdcb1035",
+              "name": "text",
+              "type": "string",
+              "value": "={{ $json.results[0].formatted_address }}"
+            },
+            {
+              "id": "d72598e1-6769-4f19-aadc-9247dc7dd7c8",
+              "name": "latitude",
+              "type": "string",
+              "value": "={{ $json.results[0].navigation_points[0].location.latitude }}"
+            },
+            {
+              "id": "ed97ff19-587c-4505-881a-0c9fe59385fc",
+              "name": "longitude",
+              "type": "string",
+              "value": "={{ $json.results[0].navigation_points[0].location.longitude }}"
+            }
+          ]
+        }
+      },
+      "typeVersion": 3.4
+    },
+    {
+      "id": "b4e8d80a-a8d9-4512-a573-b34108d6cf7f",
+      "name": "Download File",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        -880,
+        384
+      ],
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {},
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "PZefPgHGkREf4iN0",
+          "name": "Header Auth account WhatsApp FASTA"
+        }
+      },
+      "typeVersion": 4.2
+    },
+    {
+      "id": "89467936-6483-44d6-a04f-9a84366ab7dd",
+      "name": "Get File Url",
+      "type": "n8n-nodes-base.whatsApp",
+      "position": [
+        -1056,
+        384
+      ],
+      "webhookId": "187156a6-aa4f-43ae-8dc8-cd4ad07b5a7c",
+      "parameters": {
+        "resource": "media",
+        "operation": "mediaUrlGet",
+        "mediaGetId": "={{ $('Message Received').item.json.messages[0].document.id }}"
+      },
+      "credentials": {
+        "whatsAppApi": {
+          "id": "7rMPI0CcyqqjedhR",
+          "name": "WhatsApp account FASTA"
+        }
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "3b7af386-ed67-42d3-bad7-3317e1e54e15",
+      "name": "File",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        -336,
+        384
+      ],
+      "parameters": {
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "67552183-de2e-494a-878e-c2948e8cb6bb",
+              "name": "text",
+              "type": "string",
+              "value": "={{ $json.candidates[0].content.parts[0].text }}"
+            }
+          ]
+        }
+      },
+      "typeVersion": 3.4
+    },
+    {
+      "id": "b42a2e31-c7f6-4cdb-940d-2ce27a87cee0",
+      "name": "Sticky Note5",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1120,
+        848
+      ],
+      "parameters": {
+        "color": 7,
+        "width": 820,
+        "height": 220,
+        "content": "## Recognize voice messages"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "16e1c4bc-9d57-48f5-9eab-fef334a51725",
+      "name": "Sticky Note6",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1120,
+        624
+      ],
+      "parameters": {
+        "color": 6,
+        "width": 400,
+        "height": 200,
+        "content": "## Recognize customer location"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "dd93796f-12ef-452c-8e66-09e4d1365ee6",
+      "name": "Sticky Note7",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1120,
+        336
+      ],
+      "parameters": {
+        "color": 3,
+        "width": 1100,
+        "height": 240,
+        "content": "## Recognize PDF type receipts"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "f5707aa2-106e-4d2a-9802-261590f37b6b",
+      "name": "Sticky Note8",
+      "type": "n8n-nodes-base.stickyNote",
+      "disabled": true,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "color": 5,
+        "width": 672,
+        "height": 440,
+        "content": "## Analyze and confirm payment receipt"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "de6ec3de-43dd-478b-90fc-2faa0108a84b",
+      "name": "Forward receipt to Management",
+      "type": "n8n-nodes-base.whatsApp",
+      "position": [
+        -128,
+        400
+      ],
+      "webhookId": "beef7d41-e69d-49f2-bbba-fd18367db97e",
+      "parameters": {
+        "mediaId": "={{ $('Message Received').item.json.messages[0].document.id }}",
+        "mediaPath": "useMediaId",
+        "operation": "send",
+        "messageType": "document",
+        "mediaFilename": "={{ $('Message Received').item.json.messages[0].document.filename }}",
+        "phoneNumberId": "=Sender Phone Number",
+        "additionalFields": {},
+        "recipientPhoneNumber": "=Recipient's Phone Number"
+      },
+      "credentials": {
+        "whatsAppApi": {
+          "id": "7rMPI0CcyqqjedhR",
+          "name": "WhatsApp account FASTA"
+        }
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "1114452a-c737-426f-99d9-4462dbabc6c7",
+      "name": "Response to Customer",
+      "type": "n8n-nodes-base.whatsApp",
+      "position": [
+        1088,
+        560
+      ],
+      "webhookId": "5e54411e-1339-4e5a-990e-5dbc644c6384",
+      "parameters": {
+        "textBody": "={{ $('AI Restaurant Agent').item.json.output }}",
+        "operation": "send",
+        "phoneNumberId": "=[PHONE_NUMBER]",
+        "additionalFields": {},
+        "recipientPhoneNumber": "={{ $('Message Received').item.json.messages[0].from }}"
+      },
+      "credentials": {
+        "whatsAppApi": {
+          "id": "4IdzQkn96wTOyXsv",
+          "name": "WhatsApp account Romar AI"
+        }
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "36a3c898-0b2f-42da-b7e8-3b305d97500c",
+      "name": "Message Type",
+      "type": "n8n-nodes-base.switch",
+      "position": [
+        -1312,
+        512
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "outputKey": "Image",
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "202af928-a324-411a-bf15-68a349e7bf9e",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "leftValue": "={{ $json.messages[0].image }}",
+                    "rightValue": ""
+                  }
+                ]
+              },
+              "renameOutput": true
+            },
+            {
+              "outputKey": "Document",
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "c63299e9-6069-4bc6-afb9-7beebf6e3d69",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "leftValue": "={{ $json.messages[0].document }}",
+                    "rightValue": ""
+                  }
+                ]
+              },
+              "renameOutput": true
+            },
+            {
+              "outputKey": "Text",
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "08fd0c80-307e-4f45-b1de-35192ee4ec5e",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "leftValue": "={{ $json.messages[0].text.body }}",
+                    "rightValue": ""
+                  }
+                ]
+              },
+              "renameOutput": true
+            },
+            {
+              "outputKey": "Location",
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "c8092137-ea08-485c-8aaf-8e1702cc11cd",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "leftValue": "={{ $json.messages[0].location }}",
+                    "rightValue": ""
+                  }
+                ]
+              },
+              "renameOutput": true
+            },
+            {
+              "outputKey": "Voice",
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "b7b64446-f1ea-4622-990c-22f3999a8269",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "leftValue": "={{ $json.messages[0].audio }}",
+                    "rightValue": ""
+                  }
+                ]
+              },
+              "renameOutput": true
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "typeVersion": 3.2
+    },
+    {
+      "id": "48697937-4684-4b79-a682-52e328b1f9b4",
+      "name
