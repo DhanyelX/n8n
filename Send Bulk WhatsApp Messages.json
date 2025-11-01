@@ -1,0 +1,603 @@
+{
+  "id": "Z69DQyzbsETSrFnF",
+  "meta": {
+    "instanceId": "cb9a1e5321767b6316634728341237e564b2587ab15b74ca0a89eb02a53484d6",
+    "templateCredsSetupCompleted": true
+  },
+  "name": "Bulk WhatsApp Campaign Automation with Rapiwa API (Unofficial Integration)",
+  "tags": [],
+  "nodes": [
+    {
+      "id": "6ffdf381-b0ad-443f-b2c2-43ab66b81f41",
+      "name": "Fetch All Pending Queries for Messaging",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        1232,
+        176
+      ],
+      "parameters": {
+        "options": {},
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Status"
+            }
+          ]
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": 2104188169,
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Ui4TzzI-Gq-bsEsrZELwW1Kyddw0IU9L1wxlHikktqw/edit#gid=2104188169",
+          "cachedResultName": "Message Queue"
+        },
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "1Ui4TzzI-Gq-bsEsrZELwW1Kyddw0IU9L1wxlHikktqw",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Ui4TzzI-Gq-bsEsrZELwW1Kyddw0IU9L1wxlHikktqw/edit?usp=drivesdk",
+          "cachedResultName": "WhatsApp Bulk Messaging via Unofficial API"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gFH3Wjq6yYqSEAei",
+          "name": "Google Sheets"
+        }
+      },
+      "notesInFlow": false,
+      "retryOnFail": false,
+      "typeVersion": 4.6
+    },
+    {
+      "id": "d1fe1708-b770-4bd0-914b-eb8a626013e8",
+      "name": "Loop Over Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [
+        1920,
+        176
+      ],
+      "parameters": {
+        "options": {}
+      },
+      "executeOnce": false,
+      "typeVersion": 3
+    },
+    {
+      "id": "13f03348-6233-4300-b6c8-ed98e836a938",
+      "name": "Limit",
+      "type": "n8n-nodes-base.limit",
+      "position": [
+        1568,
+        176
+      ],
+      "parameters": {
+        "maxItems": 60
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "c51ac8c7-a266-4c2f-ace6-3f60eed3fb72",
+      "name": "Trigger Every 5 Minute",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        912,
+        176
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes"
+            }
+          ]
+        }
+      },
+      "typeVersion": 1.2
+    },
+    {
+      "id": "41e96999-aa74-41d8-8d5b-961ecc1ccc0e",
+      "name": "Clean WhatsApp Number",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        2224,
+        192
+      ],
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst updatedItems = items.map((item) => {\n  const waNo = item?.json[\"WhatsApp No\"];\n  const waNoStr = typeof waNo === 'string' ? waNo : (waNo !== undefined && waNo !== null ? String(waNo) : \"\");\n  const cleanedNumber = waNoStr.replace(/\\D/g, \"\");\n  item.json[\"WhatsApp No\"] = cleanedNumber;\n  return item;\n});\nreturn updatedItems;"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "fd906102-6ead-40f1-b821-154606be83f6",
+      "name": "Send Message Using Rapiwa",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        3360,
+        256
+      ],
+      "parameters": {
+        "url": "https://app.rapiwa.com/api/send-message",
+        "method": "POST",
+        "options": {},
+        "sendQuery": true,
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $json.data.number }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $('Clean WhatsApp Number').item.json.Message }}"
+            },
+            {
+              "name": "imageUrl",
+              "value": "={{ $('Clean WhatsApp Number').item.json[\"Image URL\"] }}"
+            },
+            {
+              "name": "message_type",
+              "value": "text"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "jnaHCyYia9OAFozh",
+          "name": "Rapiwa Bearer YOUR_TOKEN_HERE"
+        }
+      },
+      "executeOnce": false,
+      "typeVersion": 4.2
+    },
+    {
+      "id": "30e554d8-c023-4fa1-b015-ec28121fa86d",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        784,
+        -208
+      ],
+      "parameters": {
+        "color": 4,
+        "width": 304,
+        "height": 592,
+        "content": "## Trigger Every 5 Minutes\n\n**Purpose:** Starts the workflow automatically every 5 minutes.\n\n**Why it's important:** You don’t have to run anything manually; messages are checked and sent continuously in the background.\n"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "5104be69-ac68-4868-9d9b-b81602e04578",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1104,
+        -208
+      ],
+      "parameters": {
+        "color": 4,
+        "width": 336,
+        "height": 592,
+        "content": "## Fetch All Pending Queries for Messaging\n\n**Purpose:** Connects to the Google Sheet and pulls only the rows where Status = pending.\n\n**Why it's important:** You only want to process messages that haven’t been sent yet — this node filters them for you.\n"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "5e75e33c-be5c-49f0-93a5-5071aa00e514",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1456,
+        -208
+      ],
+      "parameters": {
+        "color": 4,
+        "width": 336,
+        "height": 592,
+        "content": "## Limit\n\n**Purpose:** Limits the number of messages processed in each cycle (e.g., 60 max).\n\n**Why it's important:** Prevents overloading your WhatsApp number or hitting Rapiwa's limits. Keeps things safe and under control.\n"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "42f57b01-0f2e-4490-93a9-ccfa5b218d59",
+      "name": "Sticky Note4",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1808,
+        -208
+      ],
+      "parameters": {
+        "color": 5,
+        "width": 336,
+        "height": 992,
+        "content": "## Loop Over Items\n\n**Purpose:** Goes through each row (message) one by one.\n\n**Why it's important:** Ensures that each message is processed separately and in order.\n"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "b13fb8fa-0cc4-4a9f-8b8c-e56c37628d09",
+      "name": "Check valid whatsapp number Using Rapiwa1",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        2512,
+        192
+      ],
+      "parameters": {
+        "url": "=https://app.rapiwa.com/api/verify-whatsapp",
+        "method": "POST",
+        "options": {},
+        "sendBody": true,
+        "authentication": "genericCredentialType",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $json[\"WhatsApp No\"] }}"
+            }
+          ]
+        },
+        "genericAuthType": "httpBearerAuth"
+      },
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "jnaHCyYia9OAFozh",
+          "name": "Rapiwa Bearer YOUR_TOKEN_HERE"
+        }
+      },
+      "typeVersion": 4.2
+    },
+    {
+      "id": "0ff144e6-0c99-4a10-9906-17de9981a5bb",
+      "name": "Sticky Note10",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2160,
+        -208
+      ],
+      "parameters": {
+        "color": 2,
+        "width": 576,
+        "height": 992,
+        "content": "## Clean and Verify WhatsApp Numbers\nBefore sending messages, each WhatsApp number is cleaned (removing spaces and symbols) and checked to make sure it’s a real, active WhatsApp account. Only valid numbers will get a message, so you don’t waste time or credits.\n\n- **Node:** Clean WhatsApp Number\n\n**Purpose:** Removes extra characters (like spaces, dashes, or parentheses) from the phone number.\n\n**Why it's important:** WhatsApp only accepts clean numeric formats. This step avoids delivery errors.\n\n- **Node:** Check valid whatsapp number Using Rapiwa\n  - Checks if the WhatsApp number is real and can receive messages.\n  - Only valid numbers will get a message."
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "2e73d560-f405-4c25-9f2a-f9373d6d4e23",
+      "name": "Sticky Note9",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2752,
+        -208
+      ],
+      "parameters": {
+        "color": 5,
+        "width": 432,
+        "height": 992,
+        "content": "## Conditional Logic\n\nThe **If** node checks whether `data.exists == true`:\n\n- **True branch (verified):**\n  - Sends a WhatsApp confirmation via Rapiwa.\n  - Appends to Google Sheets with validity: verified.\n\n- **False branch (unverified):**\n  - Appends data to the sheet with validity: unverified.\n"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "6a8f9605-abe6-4047-959b-9ca0d23ae5ea",
+      "name": "Sticky Note12",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        3200,
+        -208
+      ],
+      "parameters": {
+        "color": 4,
+        "width": 880,
+        "height": 688,
+        "content": "## Send Message via HTTP Request Using Rapiwa\n\n**Purpose:** Sends the actual message via the Rapiwa API.\n\n**How it works:** Makes a POST request to `https://app.rapiwa.com/api/send-message` with:\n- `number`: Cleaned WhatsApp number  \n- `message`: The text from the sheet\n\n**Why it's important:** This is the core of the automation — it connects your message to WhatsApp via Rapiwa.\n\n\n\n## Change State of Rows in Sent\n**Why it's important:** So you don’t accidentally resend the same message in the next cycle. Keeps track of what’s already done.\n\nTwo separate Google Sheets nodes:\n- **Verified append row in sheet** – for valid numbers.\n- **Unverified append row in sheet** – for invalid numbers.\n- **A Google Sheet** formatted like this ➤ [sample](https://docs.google.com/spreadsheets/d/1Ui4TzzI-Gq-bsEsrZELwW1Kyddw0IU9L1wxlHikktqw/edit?usp=sharing)\n"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "e04b24ae-a298-4af2-872e-97bbebac3b2c",
+      "name": "Sticky Note13",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        3200,
+        496
+      ],
+      "parameters": {
+        "color": 7,
+        "width": 880,
+        "height": 608,
+        "content": "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n## Append Unverified Row to Sheet\nThis node is triggered after a phone number is checked and found to be **unverified**. It appends the form submission data to the Google Sheet with the field `validity` set to `\"unverified\"`.\n\nThis node appends data to a Google Sheet when a WhatsApp number is **unverified**.\n- **A Google Sheet** formatted like this ➤ [sample](https://docs.google.com/spreadsheets/d/1H29z_8tnsu8AvCsI7o1SjiV-5LDTwiVVQk-BNr8SMk0/edit?usp=sharing)  \n\n\n## Wait\n\n**Purpose:** Pauses for a few seconds (e.g., 5 sec) before sending the next message.\n\n**Why it's important:** Prevents sending too many messages too quickly, which could get your WhatsApp number flagged or blocked.\n"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "b2cee59b-5cd0-4c42-92a4-3c80caea3406",
+      "name": "Wait",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        3600,
+        560
+      ],
+      "webhookId": "6c474e54-eb3c-4fcd-b455-948322cd0121",
+      "parameters": {},
+      "typeVersion": 1.1
+    },
+    {
+      "id": "87cf0d0e-62ff-43f9-879a-9cab386d541b",
+      "name": "If",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        2912,
+        432
+      ],
+      "parameters": {
+        "options": {},
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "3ab8725a-9268-45fd-b91c-0e055fe6fa7c",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "leftValue": "={{ $json.data.exists }}",
+              "rightValue": "=\"true\""
+            }
+          ]
+        }
+      },
+      "typeVersion": 2.2
+    },
+    {
+      "id": "e655fc56-d84e-48b3-ae54-d6b8f26886c9",
+      "name": "Change State of Rows in Verified & Sent",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        3600,
+        256
+      ],
+      "parameters": {
+        "columns": {
+          "value": {
+            "Status": "sent",
+            "row_number": "={{ $('Limit').item.json.row_number }}",
+            "Verification": "verified"
+          },
+          "schema": [
+            {
+              "id": "SL",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "SL",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "WhatsApp No",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "WhatsApp No",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "Name",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Message",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "Message",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Image URL",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "Image URL",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Verification",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "Verification",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "Status",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "type": "number",
+              "display": true,
+              "removed": false,
+              "readOnly": true,
+              "required": false,
+              "displayName": "row_number",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "row_number"
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {},
+        "operation": "update",
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": 2104188169,
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Ui4TzzI-Gq-bsEsrZELwW1Kyddw0IU9L1wxlHikktqw/edit#gid=2104188169",
+          "cachedResultName": "Message Queue"
+        },
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "1Ui4TzzI-Gq-bsEsrZELwW1Kyddw0IU9L1wxlHikktqw",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Ui4TzzI-Gq-bsEsrZELwW1Kyddw0IU9L1wxlHikktqw/edit?usp=drivesdk",
+          "cachedResultName": "WhatsApp Bulk Messaging via Unofficial API"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gFH3Wjq6yYqSEAei",
+          "name": "Google Sheets"
+        }
+      },
+      "typeVersion": 4.6
+    },
+    {
+      "id": "2c768d60-a246-4077-b6f6-ce14c21fe6e2",
+      "name": "Change State of Rows in Unverified & Not Sent",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        3360,
+        560
+      ],
+      "parameters": {
+        "columns": {
+          "value": {
+            "Status": "not sent",
+            "row_number": "={{ $('Limit').item.json.row_number }}",
+            "Verification": "unverified"
+          },
+          "schema": [
+            {
+              "id": "SL",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "SL",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "WhatsApp No",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "WhatsApp No",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "Name",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Message",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "Message",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Image URL",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "Image URL",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Verification",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "Verification",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "Status",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "type": "number",
+              "display": true,
+              "removed": false,
+              "readOnly": true,
+              "required": false,
+              "displayName": "row_number",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "row_number"
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {},
+        "operation": "update",
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": 2104188169,
+          "cachedResultUrl": "https://docs.google.com/spreadsh
