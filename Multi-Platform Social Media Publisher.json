@@ -1,0 +1,518 @@
+{
+  "id": "8Sbrzc7Au3ZGf62p",
+  "meta": {
+    "instanceId": "bcc0fe85b176c2837affb21bb7d7397fad2549880e73dc1f7a42e76ae94fd996",
+    "templateCredsSetupCompleted": true
+  },
+  "name": "Publish Videos & Images - Blotato",
+  "tags": [
+    {
+      "id": "3ys8SQgNTiRr899i",
+      "name": "social media",
+      "createdAt": "2025-03-17T08:37:35.227Z",
+      "updatedAt": "2025-04-07T06:13:46.923Z"
+    },
+    {
+      "id": "zyM31CVcOgUrUm2P",
+      "name": "blotato",
+      "createdAt": "2025-04-25T13:38:49.620Z",
+      "updatedAt": "2025-04-25T13:38:49.620Z"
+    },
+    {
+      "id": "2wv2YbZIQoYNx98Y",
+      "name": "schedule",
+      "createdAt": "2025-04-25T13:38:53.789Z",
+      "updatedAt": "2025-04-25T13:38:53.789Z"
+    },
+    {
+      "id": "PqlvV87F8bOW0yAK",
+      "name": "publish",
+      "createdAt": "2025-04-25T13:38:58.944Z",
+      "updatedAt": "2025-04-25T13:38:58.944Z"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "53b36edb-e273-4e68-8ae9-7d3de3f7533f",
+      "name": "[Instagram] Publish via Blotato",
+      "type": "n8n-nodes-base.httpRequest",
+      "onError": "continueErrorOutput",
+      "position": [
+        96,
+        80
+      ],
+      "parameters": {
+        "url": "https://backend.blotato.com/v2/posts",
+        "method": "POST",
+        "options": {},
+        "jsonBody": "={\n  \"post\": {\n    \"target\": {\n      \"targetType\": \"instagram\"\n    },\n    \"content\": {\n      \"text\": {{ $('Prepare for Publish').item.json.final_text_short.toJsonString() }},\n      \"platform\": \"instagram\",\n      \"mediaUrls\": [\"{{ $json.url }}\"]\n    },\n    \"accountId\": \"{{ $('Prepare for Publish').item.json.instagram_id }}\"\n  }\n}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "OEAfX6pMtcbyFBAp",
+          "name": "Blotato"
+        }
+      },
+      "typeVersion": 4.2
+    },
+    {
+      "id": "6fef0d35-9679-40f6-9224-cfb7c442056b",
+      "name": "[Facebook] Publish via Blotato",
+      "type": "n8n-nodes-base.httpRequest",
+      "onError": "continueErrorOutput",
+      "position": [
+        96,
+        480
+      ],
+      "parameters": {
+        "url": "https://backend.blotato.com/v2/posts",
+        "method": "POST",
+        "options": {},
+        "jsonBody": "={\n  \"post\": {\n    \"target\": {\n      \"targetType\": \"facebook\",\n      \"pageId\": \"{{ $('Prepare for Publish').item.json.facebook_page_id }}\"\n    },\n    \"content\": {\n      \"text\": {{ $('Prepare for Publish').item.json.final_text_long.toJsonString() }},\n      \"platform\": \"facebook\",\n      \"mediaUrls\": [\"{{ $json.url }}\"]\n    },\n    \"accountId\": \"{{ $('Prepare for Publish').item.json.facebook_id }}\"\n  }\n}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "OEAfX6pMtcbyFBAp",
+          "name": "Blotato"
+        }
+      },
+      "typeVersion": 4.2
+    },
+    {
+      "id": "3f744ee2-988b-45a6-9d88-a718780421cf",
+      "name": "[Linkedin] Publish via Blotato",
+      "type": "n8n-nodes-base.httpRequest",
+      "onError": "continueErrorOutput",
+      "position": [
+        96,
+        880
+      ],
+      "parameters": {
+        "url": "https://backend.blotato.com/v2/posts",
+        "method": "POST",
+        "options": {},
+        "jsonBody": "={\n  \"post\": {\n    \"target\": {\n      \"targetType\": \"linkedin\"\n    },\n    \"content\": {\n      \"text\": {{ $('Prepare for Publish').item.json.final_text_long.toJsonString() }},\n      \"platform\": \"linkedin\",\n      \"mediaUrls\": [\"{{ $json.url }}\"]\n    },\n    \"accountId\": \"{{ $('Prepare for Publish').item.json.linkedin_id }}\"\n  }\n}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "OEAfX6pMtcbyFBAp",
+          "name": "Blotato"
+        }
+      },
+      "typeVersion": 4.2
+    },
+    {
+      "id": "7f0ae540-090a-4b13-a094-2ac74e1a14b3",
+      "name": "[Tiktok] Publish via Blotato",
+      "type": "n8n-nodes-base.httpRequest",
+      "onError": "continueErrorOutput",
+      "position": [
+        96,
+        1280
+      ],
+      "parameters": {
+        "url": "https://backend.blotato.com/v2/posts",
+        "method": "POST",
+        "options": {},
+        "jsonBody": "={\n  \"post\": {\n    \"target\": {\n      \"targetType\": \"tiktok\",\n      \"isYourBrand\": false,\n      \"disabledDuet\": false,\n      \"privacyLevel\": \"PUBLIC_TO_EVERYONE\",\n      \"isAiGenerated\": true,\n      \"disabledStitch\": false,\n      \"disabledComments\": false,\n      \"isBrandedContent\": false\n    },\n    \"content\": {\n      \"text\": \"{{ $('Prepare for Publish').item.json.final_text_short }}\",\n      \"platform\": \"tiktok\",\n      \"mediaUrls\": [\"{{ $json.url }}\"]\n    },\n    \"accountId\": \"{{ $('Prepare for Publish').item.json.tiktok_id }}\"\n  }\n}\n",
+        "sendBody": true,
+        "specifyBody": "json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "OEAfX6pMtcbyFBAp",
+          "name": "Blotato"
+        }
+      },
+      "typeVersion": 4.2
+    },
+    {
+      "id": "2593a621-0d0b-42b3-97ab-bf85785fb33c",
+      "name": "[Pinterest] Publish via Blotato",
+      "type": "n8n-nodes-base.httpRequest",
+      "onError": "continueErrorOutput",
+      "position": [
+        96,
+        1680
+      ],
+      "parameters": {
+        "url": "https://backend.blotato.com/v2/posts",
+        "method": "POST",
+        "options": {},
+        "jsonBody": "={\n  \"post\": {\n    \"target\": {\n      \"targetType\": \"pinterest\",\n      \"boardId\": \"{{ $('Prepare for Publish').item.json.pinterested_board_id }}\",\n      \"link\": \"https://www.AIwithApex.com/\"\n    },\n    \"content\": {\n      \"text\": {{ $('Prepare for Publish').item.json.final_text_short.toJsonString() }},\n      \"platform\": \"pinterest\",\n      \"mediaUrls\": [\"{{ $('Upload Image to Blotato').item.json.url }}\"]\n    },\n    \"accountId\": \"{{ $('Prepare for Publish').item.json.pinterest_id }}\"\n  }\n}\n",
+        "sendBody": true,
+        "specifyBody": "json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "OEAfX6pMtcbyFBAp",
+          "name": "Blotato"
+        }
+      },
+      "typeVersion": 4.2
+    },
+    {
+      "id": "b47da27b-b81f-4736-9c34-cd224d78f29d",
+      "name": "[Youtube] Publish via Blotato",
+      "type": "n8n-nodes-base.httpRequest",
+      "onError": "continueErrorOutput",
+      "position": [
+        96,
+        280
+      ],
+      "parameters": {
+        "url": "https://backend.blotato.com/v2/posts",
+        "method": "POST",
+        "options": {},
+        "jsonBody": "={\n  \"post\": {\n    \"target\": {\n      \"targetType\": \"youtube\",\n      \"title\": \"{{ $('Ensure Valid YouTube Title').item.json.message.content.youtube_title }}\",\n      \"privacyStatus\": \"public\",\n      \"shouldNotifySubscribers\": true\n    },\n    \"content\": {\n      \"text\": {{ $('Prepare for Publish').item.json.final_text_long.toJsonString() }},\n      \"platform\": \"youtube\",\n      \"mediaUrls\": [\"{{ $json.url }}\"]\n    },\n    \"accountId\": \"{{ $('Prepare for Publish').item.json.youtube_id }}\"\n  }\n}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "OEAfX6pMtcbyFBAp",
+          "name": "Blotato"
+        }
+      },
+      "typeVersion": 4.2
+    },
+    {
+      "id": "19f17323-45f5-4865-b754-e2d5f8fc6073",
+      "name": "[Threads] Publish via Blotato",
+      "type": "n8n-nodes-base.httpRequest",
+      "onError": "continueErrorOutput",
+      "position": [
+        96,
+        680
+      ],
+      "parameters": {
+        "url": "https://backend.blotato.com/v2/posts",
+        "method": "POST",
+        "options": {},
+        "jsonBody": "={\n  \"post\": {\n    \"target\": {\n      \"targetType\": \"threads\"\n    },\n    \"content\": {\n      \"text\": {{ $('Prepare for Publish').item.json.final_text_short.toJsonString() }},\n      \"platform\": \"threads\",\n      \"mediaUrls\": [\"{{ $json.url }}\"]\n    },\n    \"accountId\": \"{{ $('Prepare for Publish').item.json.threads_id }}\"\n  }\n}\n",
+        "sendBody": true,
+        "specifyBody": "json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "OEAfX6pMtcbyFBAp",
+          "name": "Blotato"
+        }
+      },
+      "typeVersion": 4.2
+    },
+    {
+      "id": "adaa3ac1-fa2a-422e-8b70-8c4cc74782ed",
+      "name": "[Twitter] Publish via Blotato",
+      "type": "n8n-nodes-base.httpRequest",
+      "onError": "continueErrorOutput",
+      "position": [
+        96,
+        1080
+      ],
+      "parameters": {
+        "url": "https://backend.blotato.com/v2/posts",
+        "method": "POST",
+        "options": {},
+        "jsonBody": "={\n  \"post\": {\n    \"target\": {\n      \"targetType\": \"twitter\"\n    },\n    \"content\": {\n      \"text\": {{ $('Prepare for Publish').item.json.final_text_short.toJsonString() }},\n      \"platform\": \"twitter\",\n      \"mediaUrls\": [\"{{ $json.url }}\"]\n    },\n    \"accountId\": \"{{ $('Prepare for Publish').item.json.twitter_id }}\"\n  }\n}\n",
+        "sendBody": true,
+        "specifyBody": "json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "OEAfX6pMtcbyFBAp",
+          "name": "Blotato"
+        }
+      },
+      "typeVersion": 4.2
+    },
+    {
+      "id": "af2d0a29-73d1-4ee0-84c9-f337a628b3ea",
+      "name": "[Bluesky] Publish via Blotato",
+      "type": "n8n-nodes-base.httpRequest",
+      "onError": "continueErrorOutput",
+      "position": [
+        96,
+        1480
+      ],
+      "parameters": {
+        "url": "https://backend.blotato.com/v2/posts",
+        "method": "POST",
+        "options": {},
+        "jsonBody": "={\n  \"post\": {\n    \"target\": {\n      \"targetType\": \"bluesky\"\n    },\n    \"content\": {\n      \"text\": {{ $('Prepare for Publish').item.json.final_text_short.toJsonString() }},\n      \"platform\": \"bluesky\",\n      \"mediaUrls\": [\"{{ $('Upload Image to Blotato').item.json.url }}\"]\n    },\n    \"accountId\": \"{{ $('Prepare for Publish').item.json.bluesky_id }}\"\n  }\n}\n",
+        "sendBody": true,
+        "specifyBody": "json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "OEAfX6pMtcbyFBAp",
+          "name": "Blotato"
+        }
+      },
+      "typeVersion": 4.2
+    },
+    {
+      "id": "08253c79-44f6-471a-b7c9-b84046f16888",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        16,
+        -40
+      ],
+      "parameters": {
+        "color": 2,
+        "width": 260,
+        "height": 1880,
+        "content": "# Publish to Social Media"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "dae9e738-c391-47f6-bdf7-87055a5a77f0",
+      "name": "Prepare for Publish",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        -564,
+        880
+      ],
+      "parameters": {
+        "mode": "raw",
+        "options": {},
+        "jsonOutput": "={\n  \"instagram_id\": \"2244\",\n  \"youtube_id\": \"1300\",\n  \"tiktok_id\": \"2761\",\n  \"facebook_id\": \"2152\",\n  \"facebook_page_id\": \"127923797405586\",\n  \"threads_id\": \"670\",\n  \"twitter_id\": \"1576\",\n  \"linkedin_id\": \"1730\",\n  \"pinterest_id\": \"447\",\n  \"pinterested_board_id\": \"1097611809123639891\",\n  \"bluesky_id\": \"1311\",\n  \"final_text_long\": {{ $('Airtable').item.json.Script.toJsonString() }},\n  \"final_text_short\": {{ $('Airtable').item.json['Text for X'].toJsonString() }}\n}"
+      },
+      "typeVersion": 3.4
+    },
+    {
+      "id": "aaa21d7f-e175-4516-8bde-e0b87e6e183d",
+      "name": "Airtable",
+      "type": "n8n-nodes-base.airtable",
+      "position": [
+        -1160,
+        880
+      ],
+      "parameters": {
+        "id": "={{ $json.airtableID }}",
+        "base": {
+          "__rl": true,
+          "mode": "list",
+          "value": "appt2yDl6xXXyqboD",
+          "cachedResultUrl": "https://airtable.com/appt2yDl6xXXyqboD",
+          "cachedResultName": "Social Media System"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "tblM3kDu1qB2FdTOF",
+          "cachedResultUrl": "https://airtable.com/appt2yDl6xXXyqboD/tblM3kDu1qB2FdTOF",
+          "cachedResultName": "Media Creation"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YzrajURFsZkojT3x",
+          "name": "Delete Me Later Please!"
+        }
+      },
+      "typeVersion": 2.1
+    },
+    {
+      "id": "e05d1ede-7d43-4c55-a353-6bc2bd0216d4",
+      "name": "Upload Video to Blotato",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        -124,
+        880
+      ],
+      "parameters": {
+        "url": "https://backend.blotato.com/v2/media",
+        "method": "POST",
+        "options": {},
+        "sendBody": true,
+        "authentication": "genericCredentialType",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "url",
+              "value": "={{ $('Airtable').item.json['Video URL'] }}"
+            }
+          ]
+        },
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "gNaQW1qT8liDV4ls",
+          "name": "Delete me toooooo!"
+        }
+      },
+      "typeVersion": 4.2
+    },
+    {
+      "id": "92fd39a9-74c1-4cbb-abb3-511f8230cee7",
+      "name": "Upload Image to Blotato",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        -344,
+        880
+      ],
+      "parameters": {
+        "url": "https://backend.blotato.com/v2/media",
+        "method": "POST",
+        "options": {},
+        "sendBody": true,
+        "authentication": "genericCredentialType",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "url",
+              "value": "={{ $('Airtable').item.json['Image URL'] }}"
+            }
+          ]
+        },
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "gNaQW1qT8liDV4ls",
+          "name": "Delete me toooooo!"
+        }
+      },
+      "typeVersion": 4.2
+    },
+    {
+      "id": "12b8ecfe-f83b-4e32-a8d7-a71b7f5c9fd1",
+      "name": "Ensure Valid YouTube Title",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "position": [
+        -940,
+        880
+      ],
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini",
+          "cachedResultName": "GPT-4.1-MINI"
+        },
+        "options": {},
+        "messages": {
+          "values": [
+            {
+              "content": "=CURRENT_TITLE:\n{{ $json['Media Title'] }}"
+            },
+            {
+              "role": "assistant",
+              "content": "# TASK\nYou specialize in creating Viral YouTube Short Video Titles.  You are to take User's CURRENT_TITLE and re-write it to go viral.\n## Rules\n - Maximum 100 Characters\n - Goal is Virality!\n - Must be valid title for a YouTube Short Video\n# OUTPUT\nOutput must be in JSON format, example:\n{ \"youtube_title\": \"<generated title per instructions>\" }"
+            }
+          ]
+        },
+        "jsonOutput": true
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "KzjXYSuzUOCnnvzB",
+          "name": "OpenAi account"
+        }
+      },
+      "typeVersion": 1.8
+    },
+    {
+      "id": "d83577ae-5aa7-4d47-a67b-30e30fcd2fa4",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1660,
+        1060
+      ],
+      "parameters": {
+        "width": 880,
+        "height": 360,
+        "content": "## Quick Debug Checking\n### I set up quick links to social media to check whether the posting system succeeded or not.  I tried video if possible, if not I used image.  You can also find Blotato failed posts here: https://my.blotato.com/failed\n\n[replace these with your own links if you like]\nInstagram: https://www.instagram.com/moshehbenavraham/reels/\nYoutube: https://www.youtube.com/@AIwithApex/shorts\nFacebook: https://www.facebook.com/MoshehApexWebServices/grid\nThreads: https://www.threads.com/@moshehbenavraham\nLinkedIn: https://www.linkedin.com/in/moshehbenavraham/recent-activity/all/\nX / Twitter: https://x.com/MoshehAvraham\nTikTok: https://www.tiktok.com/@moshehavraham\nBluesky: https://bsky.app/profile/aiwithapex.bsky.social\nPinterest: https://www.pinterest.com/aiwithapex/artificial-intelligence-ai-ai-automation/\n"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "356518e3-1eb6-4cfe-bf77-a5f095553b74",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -880,
+        1440
+      ],
+      "parameters": {
+        "width": 880,
+        "height": 300,
+        "content": "## Current Issues (last updated April 29, 2025)\n\n- Haven't confirmed, but you -have- to post to a FB Page?\n- I believe you can only post to a particular Board in Pinterest\n- Some Endpoints can handle longer text, some not\n- Some Endpoints can handle videos, some not\n- With Facebook, apparently only plain text is accepted\n- With LinkedIn, apparently only plain text is accepted\n- Haven't found info about ways to access what you have uploaded to Blotato, nor capacity limit, nor how long the assets are stored for -- did find a concurrency limit of using it 10 requests/minute\n- Encountered this error with YouTube POST despite not posting that much: \"Error: The request cannot be completed because you have exceeded your <a href=\"/youtube/v3/getting-started#quota\">quota</a>.\""
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "503a04c9-a740-4c5d-9f67-143a8dd1422f",
+      "name": "Airtable: Posted Instagram",
+      "type": "n8n-nodes-base.airtable",
+      "position": [
+        316,
+        -20
+      ],
+      "parameters": {
+        "base": {
+          "__rl": true,
+          "mode": "list",
+          "value": "appt2yDl6xXXyqboD",
+          "cachedResultUrl": "https://airtable.com/appt2yDl6xXXyqboD",
+          "cachedResultName": "Social Media System"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "tblM3kDu1qB2FdTOF",
+          "cachedResultUrl": "https://airtable.com/appt2yDl6xXXyqboD/tblM3kDu1qB2FdTOF",
+          "cachedResultName": "Media Creation"
+        },
+        "columns": {
+          "value": {
+            "id": "={{ $('Airtable').item.json.id",
+            "Production": "Completed"
+          },
+          "schema": [
+            {
+              "id": "id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": true,
+              "required": false,
+              "displayName": "id",
+              "defaultMatch": true
+            },
+            {
+              "id": "Media Title",
+              "type": "string",
+              "display": true,
+              "removed": true,
+      
