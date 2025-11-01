@@ -1,0 +1,489 @@
+{
+  "meta": {
+    "instanceId": "ae91f3a2c3e99a5233d018ffb5752bb637665a438dc075df08fe407535a29d75",
+    "templateCredsSetupCompleted": true
+  },
+  "nodes": [
+    {
+      "id": "8b252a0c-1ae3-4c3b-88b9-c9404c4800ac",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -944,
+        704
+      ],
+      "parameters": {
+        "color": 3,
+        "width": 416,
+        "height": 272,
+        "content": "## Cancel Booking Workflow.\n- **Trigger:** User / Doctor cancels the appointment from Google Sheet.\n- **If 1:** Detects the cancellation event in the sheet.\n- **If 2:** Sends a WhatsApp message to the user informing them about the cancellation.\n- **If 2:** Verifies if payment was completed via Stripe.\n- **Stripe (if paid):** Initiates a refund using Stripe API & Updates the Refund Status in sheet.\n\n#"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "17530300-ece2-4b1a-9d88-3c3efbe72bca",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -944,
+        32
+      ],
+      "parameters": {
+        "color": 4,
+        "width": 416,
+        "height": 192,
+        "content": "## Appointment Reminder Workflow\n- **Trigger:** Scheduled trigger fires daily at 8:00 AM.\n- **AI Agent Action 1:** Retrieves today's appointments.\n- **AI Agent Action 2:** Generates personalized reminder messages.\n- **AI Agent Action 3:** Sends the reminder to each user via WhatsApp.\n\n#"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "276adff9-24f2-4655-913f-bfeb2ce8742f",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -944,
+        1168
+      ],
+      "parameters": {
+        "width": 416,
+        "height": 304,
+        "content": "## Payment Verification Workflow\n- **Trigger:** Stripe webhook triggers on successful payment.\n- **Step 1:** Call Stripe API to retrieve payment metadata.\n- **Step 2:** Update the corresponding appointment row in Google Sheet:\n  - Set `status` to `Confirmed`\n  - Set `payment_status` to `Paid`\n  - Save `Stripe Payment Intent` for future refund reference\n- **Step 3:** Send payment confirmation message to the user via WhatsApp.\n"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "3fd7ed31-f2e7-47dd-96d7-d26f902c21fa",
+      "name": "Google Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "position": [
+        -640,
+        2624
+      ],
+      "parameters": {
+        "options": {}
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "ee6c1218-d26b-4bec-8ae8-8dd2fbb2433c",
+      "name": "WhatsApp Trigger",
+      "type": "n8n-nodes-base.whatsAppTrigger",
+      "position": [
+        -864,
+        2272
+      ],
+      "webhookId": "738b9902-7ae4-46df-bc73-6684d7d67bdf",
+      "parameters": {
+        "options": {},
+        "updates": [
+          "messages"
+        ]
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "95cc9fe1-0599-47f5-b069-7e33e2aaf575",
+      "name": "Simple Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "position": [
+        -640,
+        2800
+      ],
+      "parameters": {
+        "sessionKey": "={{ $('WhatsApp Trigger').item.json.contacts[0].wa_id }}",
+        "sessionIdType": "customKey",
+        "contextWindowLength": 6
+      },
+      "typeVersion": 1.3
+    },
+    {
+      "id": "bd1defd2-b07e-4127-a704-cf91e7316441",
+      "name": "Date & Time",
+      "type": "n8n-nodes-base.dateTimeTool",
+      "position": [
+        -640,
+        2976
+      ],
+      "parameters": {
+        "options": {
+          "timezone": "Asia/Kolkata"
+        }
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "958b5f9a-87fa-456c-a0b0-10f04950e27a",
+      "name": "Send message",
+      "type": "n8n-nodes-base.whatsApp",
+      "position": [
+        448,
+        2272
+      ],
+      "webhookId": "779c6e67-50cc-4757-9a96-14ab5cc1521f",
+      "parameters": {
+        "textBody": "={{ $json.output }}",
+        "operation": "send",
+        "additionalFields": {},
+        "recipientPhoneNumber": "={{ $('WhatsApp Trigger').item.json.contacts[0].wa_id }}"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "9f3e4761-a07d-4cf0-9816-723506851185",
+      "name": "Get Patient List For User",
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "position": [
+        -448,
+        2832
+      ],
+      "parameters": {
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "typeVersion": 4.7
+    },
+    {
+      "id": "f8f6163b-e00e-448d-876a-6e6617551606",
+      "name": "Add Patient",
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "position": [
+        -448,
+        2640
+      ],
+      "parameters": {
+        "columns": {
+          "value": {
+            "age": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('age', ``, 'string') }}",
+            "name": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('name', ``, 'string') }}",
+            "gender": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('gender', ``, 'string') }}",
+            "patient_id": "={{ $now.toMillis() }}",
+            "whatsapp_number": "={{ $('WhatsApp Trigger').item.json.contacts[0].wa_id }}"
+          },
+          "schema": [
+            {
+              "id": "patient_id",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "patient_id",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "whatsapp_number",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "whatsapp_number",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "name",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "name",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "age",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "age",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "gender",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "gender",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {},
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "typeVersion": 4.7
+    },
+    {
+      "id": "adfbc305-959c-4874-bf41-e6e4367900f3",
+      "name": "Get User Appointments",
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "position": [
+        -272,
+        2832
+      ],
+      "parameters": {
+        "options": {},
+        "filtersUI": {
+          "values": [
+            {
+              "lookupValue": "={{ $('WhatsApp Trigger').item.json.messages[0].from }}",
+              "lookupColumn": "whatsapp_number"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "typeVersion": 4.7
+    },
+    {
+      "id": "8da9ce69-2b4f-4415-98de-c30b810dfda0",
+      "name": "Add Appointment",
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "position": [
+        -272,
+        2640
+      ],
+      "parameters": {
+        "columns": {
+          "value": {
+            "date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('date', ``, 'string') }}",
+            "time": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('time', ``, 'string') }}",
+            "status": "Confirmed",
+            "patient_id": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('patient_id', ``, 'string') }}",
+            "appointment_id": "={{ $now.toMillis() }}",
+            "payment_method": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('payment_method', ``, 'string') }}",
+            "payment_status": "Pending",
+            "whatsapp_number": "={{ $('WhatsApp Trigger').item.json.contacts[0].wa_id }}"
+          },
+          "schema": [
+            {
+              "id": "appointment_id",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "appointment_id",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "patient_id",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "patient_id",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "whatsapp_number",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "whatsapp_number",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "date",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "date",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "time",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "time",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "payment_method",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "payment_method",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "payment_status",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "payment_status",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "status",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "stripe_payment_intent",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "stripe_payment_intent",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {},
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "typeVersion": 4.7
+    },
+    {
+      "id": "54ab2767-ca1b-4a34-98bb-3704e9ac7e6b",
+      "name": "Get All Appointments",
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "position": [
+        -80,
+        2832
+      ],
+      "parameters": {
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "",
+          "cachedResultUrl": "",
+          "cachedResultName": ""
+        },
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "typeVersion": 4.7
+    },
+    {
+      "id": "8f2af0c9-5b67-4d92-8cbf-cc234b64ed4b",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        -336,
+        2272
+      ],
+      "parameters": {
+        "text": "={{ $json.messages[0].text.body }}",
+        "options": {
+          "systemMessage": "You are an AI Assistant for a Doctor Clinic.\nYour role is to handle doctor’s appointment bookings via WhatsApp.\nYou must always keep track of the user’s progress with simple memory, and store/retrieve data in Google Sheets.\nPayments are handled via Stripe or Cash on Clinic.\nAlways be polite, WhatsApp-friendly, and guide users step by step.\n\nCore Workflow:\n\nGreeting & Main Menu\n\nWhen a user sends any message for the first time, greet them:\n\"Hello, Welcome to Doctor Clinic!\nPlease choose an option:\n\n1. New Booking\n2. My Upcoming Bookings\n3. Reschedule Booking\n4. Cancel Booking\"\n\nWait for the user’s choice.\n\nNew Booking Flow\n(a) Patient Lookup\n\nget user registered patients\n\nIf patients exist with , show patient list and ask which one to use.\n\nIf no patient exists for given WhatsApp number or user selects \"Add New Patient\":\n\nAsk for Name, Age, Gender.\n\nSave to Patients sheet.\n\nagain fetch the latest patient list for user \n\nShow updated patient list with patient_id ( must be displayed to user ), name, age and gender then ask which one to use ( user can reply with number option also ). \n\n(b) Date Selection\n\nGet the today's date and time from system\n\nGenerate 7 days (today + 6 days).\n\nExclude fully booked days.\n\nAsk user to choose a date.\n\n(c) Time Slot Selection\n\nFor chosen date, use working hours from Config sheet.\n\nDivide into slots of 60 minutes.\n\nExclude already booked slots for chosen date Using All Appointments sheet.\n\nExclude not_available slot using give date and time from config sheet in format YYYY-MM-DD HH:MM to HH:MM means on this date on given time range doctor will not be available.\n\nif todays date is chosen, Get the current time from system &  show only the slots after the current system time ( ex. if current time is 12:05 then give option from 13:00).\n\nShow available slots and ask user to pick one.\n\n(d) Payment Options\n\nAfter time is selected, ask:\n\"How would you like to pay?\n\n1. Online (Stripe)\n2. Cash at Clinic\"\n\n(e) Confirmation Message\n\nAfter taking all the data add the appointment in appointment sheet if user selects online (stripe) then save payment_method \"Stripe\"\n\nand send confirm message with:\n\"Appointment booked!\nPatient: {name}\nDate: {date}\nTime: {time}\nPayment Method: {method}\nPayment Status: Not paid\nStatus: Confirmed\"\n\nMy Upcoming Bookings Flow\n\nGet the current date and time from system\n\nLook up all future user appointments.\nGet all user patients.\n\nshow them as a list with user name , booking date , booking time\n\nReschedule Flow\n\nLook up all future confirmed appointments for the user.\nGet all user patients.\n\nShow them as a list with appointment id, user name, appointment date & time.\n\nAsk which one to reschedule.\n\nGet the today's date and time from system\n\nGenerate 7 days (today + 6 days).\n\nExclude fully booked days.\n\nAsk user to choose a date.\n\nFor chosen date, use working hours from Config sheet.\n\nDivide into slots of 60 minutes.\n\nExclude already booked slots for chosen date Using All Appointments sheet.\n\nExclude not_available slot using give date and time from config sheet in format YYYY-MM-DD HH:MM to HH:MM means on this date on given time range doctor will not be available.\n\nif todays date is chosen, Get the current time from system &  show only the slots after the current system time ( ex. if current time is 12:05 then give option from 13:00).\n\nShow available slots and ask user to pick one.\nafter the current system time ( if current time is 12:05 then give option from 13:00).\n\nShow available slots and ask user to pick one.\n\nafter picking one update the old appointment details with selected date and time \n\nand give a message to user that appointment has been reschedule and give details for new rescheduled appointment with patient details.\n\nCancel Flow\n\nGet the today's date and time from system\n\nLook up all future user appointments.\n\nShow them as a list with appointment id, appointment date & time .\n\nAsk which one to cancel.\n\nthen Cancel the selected appointment Appointment sheet.\n\nSend confirmation:\n\"Your appointment on {date} at {time} has been cancelled.\"\n\nGoogle Sheets Structure:\nPatients: patient_id, whatsapp_number, name, age, gender\nAppointments: appointment_id, patient_id, whatsapp_number, date, time, payment_method, payment_status, status, stripe_payment_intent\nConfig Sheet: key, value ( working_hours=10:00-18:00)\n\nMemory Rules:\n\nAlways remember where the user left off (menu, patient selection, date, time, payment).\n\nIf the user sends something invalid, say:\n\"Sorry, I didn’t understand that. Please reply with one of the given options.\"\n\nIf the user returns later, continue from the last remembered step.\n\nStyle Guide:\n\nsingle patient can register multiple patients and book as many appointments.\n\nKeep messages short, clear, and WhatsApp-friendly.\n\nUse numbers for options ( like reply with  1, 2, 3 ).\n\nAlways confirm before finalizing."
+        },
+        "promptType": "define"
+      },
+      "typeVersion": 2.2
+    },
+    {
+      "id": "895a58ff-a97e-48c2-8c94-4beb1ed6dd71",
+      "name": "Reschedule Appointment",
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "position": [
+        -80,
+        2640
+      ],
+      "parameters": {
+        "columns": {
+          "value": {
+            "date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('date', ``, 'string') }}",
+            "time": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('time', ``, 'string') }}",
+            "appointment_id": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('appointment_id__using_to_match_', ``, 'string') }}"
+          },
+          "schema": [
+            {
+              "id": "appointment_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "appointment_id",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "patient_id",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "patient_id",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "whatsapp_number",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "whatsapp_number",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "date",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "date",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "time",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "time",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "payment_method",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "payment_method",
+          
