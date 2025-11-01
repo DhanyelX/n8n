@@ -1,0 +1,188 @@
+{
+  "id": "FgamqYDVNixmK2gV",
+  "meta": {
+    "instanceId": "f080fafc9937b6b383f471ad8cc35ad1727032832bd16212f900e0577db46644",
+    "templateCredsSetupCompleted": true
+  },
+  "name": "Hotel Booking System",
+  "tags": [],
+  "nodes": [
+    {
+      "id": "7befd68e-1976-4e76-a283-f00955b26582",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        368,
+        336
+      ],
+      "parameters": {
+        "color": 6,
+        "width": 512,
+        "height": 240,
+        "content": "🏨 PRE-ARRIVAL WELCOME EMAIL AUTOMATION\n═══════════════════════════════════════════════════════════\n✨ Automatically sends personalized welcome emails 1-2 days before check-in\n📧 Includes reservation details, hotel amenities, and contact information\n🔄 Checks every 6 hours for upcoming arrivals\n⚡ Updates tracking to prevent duplicate emails\n\n🎯 PERFECT FOR: Guest experience enhancement | Reducing front desk inquiries | Professional first impression"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "c25c0e43-0a84-449a-856f-e0c37d166bc8",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        400,
+        640
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "typeVersion": 1.2
+    },
+    {
+      "id": "db181591-4b20-4919-acf7-de13edddd5a0",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        592,
+        640
+      ],
+      "parameters": {
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0583a748-dcd8-401e-8462-d9cf9920940f",
+              "name": "Hotel Name",
+              "type": "string",
+              "value": "Mr. Wonderful"
+            }
+          ]
+        },
+        "includeOtherFields": true
+      },
+      "typeVersion": 3.4
+    },
+    {
+      "id": "42dcd64c-0fba-4886-957e-fe6f76ac0171",
+      "name": "Switch",
+      "type": "n8n-nodes-base.switch",
+      "position": [
+        1184,
+        672
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "outputKey": "welcome email",
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "loose"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "a94938f6-a07d-49d4-a279-73cb2e6a3a6e",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    },
+                    "leftValue": "={{ Boolean(Math.ceil(DateTime.fromFormat($json['Check-in Date'], 'M/d/yyyy HH:mm:ss').diff(DateTime.now(), 'days').days) > 0 && Math.ceil(DateTime.fromFormat($json['Check-in Date'], 'M/d/yyyy HH:mm:ss').diff(DateTime.now(), 'days').days) <= 2) }}",
+                    "rightValue": 2
+                  }
+                ]
+              },
+              "renameOutput": true
+            },
+            {
+              "outputKey": "Write Review",
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "loose"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "b78e6271-d55b-43a5-b44f-c44c2e3d9c0b",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    },
+                    "leftValue": "={{ Boolean(Math.abs(DateTime.fromFormat($json['Check-out Date'], 'M/d/yyyy HH:mm:ss').diff(DateTime.now(), 'days').days) >= 1 && Math.abs(DateTime.fromFormat($json['Check-out Date'], 'M/d/yyyy HH:mm:ss').diff(DateTime.now(), 'days').days) <= 2) }}",
+                    "rightValue": 1
+                  }
+                ]
+              },
+              "renameOutput": true
+            }
+          ]
+        },
+        "options": {},
+        "looseTypeValidation": true
+      },
+      "typeVersion": 3.2
+    },
+    {
+      "id": "136a56f4-c7e3-4231-ac45-ecc17bb381bd",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        960,
+        336
+      ],
+      "parameters": {
+        "color": 6,
+        "width": 416,
+        "height": 256,
+        "content": "⭐ POST-STAY REVIEW REQUEST AUTOMATION\n═══════════════════════════════════════════════════════════\n🎯 Automatically requests reviews from guests 24 hours after checkout\n📝 Includes Google Reviews and TripAdvisor links\n🎁 Offers return guest discount codes\n📞 Provides direct contact for any issues\n\n💡 BOOSTS: Online reputation | Future bookings | Guest loyalty | Review volume"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "de93fa3f-c28f-4738-95b7-1115f0d2c33e",
+      "name": "Welcome Email",
+      "type": "n8n-nodes-base.gmail",
+      "position": [
+        1744,
+        608
+      ],
+      "webhookId": "0ad03fe4-6be0-4c11-8087-9c62cfeab4b1",
+      "parameters": {
+        "sendTo": "={{ $json['Guest Email'] }}",
+        "message": "=<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Hotel Reservation Confirmation</title>\n</head>\n<body style=\"font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; background-color: #f4f7fa; margin: 0; padding: 20px 0;\">\n    \n    <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" style=\"max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);\">\n        \n        <!-- Header -->\n        <tr>\n            <td style=\"background: linear-gradient(135deg, #2c5aa0 0%, #1e3a5f 100%); background-color: #2c5aa0; color: white; padding: 30px 40px; text-align: center;\">\n                <h1 style=\"font-size: 28px; margin: 0 0 10px 0; font-weight: 300;\">[Hotel Name]</h1>\n                <p style=\"font-size: 16px; opacity: 0.9; margin: 0;\">Luxury & Comfort Redefined</p>\n            </td>\n        </tr>\n        \n        <!-- Main Content -->\n        <tr>\n            <td style=\"padding: 40px;\">\n                \n                <!-- Greeting -->\n                <div style=\"font-size: 18px; color: #333; margin-bottom: 20px;\">\n                    Dear <strong>{{ $json['Guest Name'] }}</strong>,\n                </div>\n                \n                <!-- Confirmation Message -->\n                <div style=\"background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%); background-color: #e8f5e8; border-left: 4px solid #28a745; padding: 20px; margin: 25px 0; border-radius: 8px;\">\n                    <p style=\"color: #155724; font-weight: 500; margin: 0;\">🎉 We're thrilled to welcome you to [Hotel Name]! Your reservation is confirmed for {{ $json['Check-in Date'] }} to {{ $json['Check-out Date'] }}.</p>\n                </div>\n                \n                <!-- Reservation Details Section -->\n                <div style=\"margin: 30px 0;\">\n                    <h2 style=\"display: flex; align-items: center; font-size: 20px; color: #2c5aa0; margin-bottom: 20px; font-weight: 600;\">\n                        <span style=\"margin-right: 12px; font-size: 24px;\">🏨</span>\n                        Your Reservation Details\n                    </h2>\n                    \n                    <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" style=\"background: #f8f9fa; border-radius: 8px; padding: 25px;\">\n                        <tr>\n                            <td style=\"padding: 12px 0; border-bottom: 1px solid #e9ecef;\">\n                                <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\">\n                                    <tr>\n                                        <td style=\"font-weight: 600; color: #495057;\">Reservation ID:</td>\n                                        <td style=\"color: #2c5aa0; font-weight: 500; text-align: right;\">{{ $json['Booking ID'] }}</td>\n                                    </tr>\n                                </table>\n                            </td>\n                        </tr>\n                        <tr>\n                            <td style=\"padding: 12px 0; border-bottom: 1px solid #e9ecef;\">\n                                <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\">\n                                    <tr>\n                                        <td style=\"font-weight: 600; color: #495057;\">Room Type:</td>\n                                        <td style=\"color: #2c5aa0; font-weight: 500; text-align: right;\">{{ $json['Room Type'] }}</td>\n                                    </tr>\n                                </table>\n                            </td>\n                        </tr>\n                        <tr>\n                            <td style=\"padding: 12px 0; border-bottom: 1px solid #e9ecef;\">\n                                <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\">\n                                    <tr>\n                                        <td style=\"font-weight: 600; color: #495057;\">Number of Guests:</td>\n                                        <td style=\"color: #2c5aa0; font-weight: 500; text-align: right;\">{{ $json['Guest Count'] }}</td>\n                                    </tr>\n                                </table>\n                            </td>\n                        </tr>\n                        <tr>\n                            <td style=\"padding: 12px 0; border-bottom: 1px solid #e9ecef;\">\n                                <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\">\n                                    <tr>\n                                        <td style=\"font-weight: 600; color: #495057;\">Check-in:</td>\n                                        <td style=\"color: #2c5aa0; font-weight: 500; text-align: right;\">{{ $json['Check-in Date'] }} (3:00 PM)</td>\n                                    </tr>\n                                </table>\n                            </td>\n                        </tr>\n                        <tr>\n                            <td style=\"padding: 12px 0;\">\n                                <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\">\n                                    <tr>\n                                        <td style=\"font-weight: 600; color: #495057;\">Check-out:</td>\n                                        <td style=\"color: #2c5aa0; font-weight: 500; text-align: right;\">{{ $json['Check-out Date'] }} (11:00 AM)</td>\n                                    </tr>\n                                </table>\n                            </td>\n                        </tr>\n                    </table>\n                </div>\n                \n                <!-- Amenities Section -->\n                <div style=\"margin: 30px 0;\">\n                    <h2 style=\"font-size: 20px; color: #2c5aa0; margin-bottom: 20px; font-weight: 600;\">\n                        <span style=\"margin-right: 12px; font-size: 24px;\">🅿️</span>\n                        What You Need to Know\n                    </h2>\n                    \n                    <div style=\"background: white; margin: 12px 0; padding: 15px 20px; border-radius: 8px; border-left: 4px solid #2c5aa0; box-shadow: 0 2px 8px rgba(0,0,0,0.05);\">\n                        <div style=\"font-weight: 600; color: #2c5aa0; margin-bottom: 5px;\">Free WiFi</div>\n                        <div style=\"color: #666;\">Network: HotelGuest | Password: welcome2024</div>\n                    </div>\n                    \n                    <div style=\"background: white; margin: 12px 0; padding: 15px 20px; border-radius: 8px; border-left: 4px solid #2c5aa0; box-shadow: 0 2px 8px rgba(0,0,0,0.05);\">\n                        <div style=\"font-weight: 600; color: #2c5aa0; margin-bottom: 5px;\">Complimentary Breakfast</div>\n                        <div style=\"color: #666;\">Available daily from 7:00 AM - 10:00 AM</div>\n                    </div>\n                    \n                    <div style=\"background: white; margin: 12px 0; padding: 15px 20px; border-radius: 8px; border-left: 4px solid #2c5aa0; box-shadow: 0 2px 8px rgba(0,0,0,0.05);\">\n                        <div style=\"font-weight: 600; color: #2c5aa0; margin-bottom: 5px;\">Parking</div>\n                        <div style=\"color: #666;\">Available on-site for $15/night</div>\n                    </div>\n                    \n                    <div style=\"background: white; margin: 12px 0; padding: 15px 20px; border-radius: 8px; border-left: 4px solid #2c5aa0; box-shadow: 0 2px 8px rgba(0,0,0,0.05);\">\n                        <div style=\"font-weight: 600; color: #2c5aa0; margin-bottom: 5px;\">Fitness Center</div>\n                        <div style=\"color: #666;\">Open 24/7 for all guests</div>\n                    </div>\n                </div>\n                \n                <!-- Contact Section -->\n                <div style=\"margin: 30px 0;\">\n                    <h2 style=\"font-size: 20px; color: #2c5aa0; margin-bottom: 20px; font-weight: 600;\">\n                        <span style=\"margin-right: 12px; font-size: 24px;\">📞</span>\n                        Contact Us\n                    </h2>\n                    \n                    <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\">\n                        <tr>\n                            <td width=\"50%\" style=\"padding-right: 10px;\">\n                                <div style=\"background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); background-color: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; border: 2px solid #e9ecef;\">\n                                    <div style=\"font-weight: 600; color: #2c5aa0; margin-bottom: 10px;\">Front Desk</div>\n                                    <div style=\"color: #495057; font-weight: 500;\">\n                                        <a href=\"tel:+15551234567\" style=\"color: #2c5aa0; text-decoration: none;\">+1 (555) 123-4567</a>\n                                    </div>\n                                </div>\n                            </td>\n                            <td width=\"50%\" style=\"padding-left: 10px;\">\n                                <div style=\"background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); background-color: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; border: 2px solid #e9ecef;\">\n                                    <div style=\"font-weight: 600; color: #2c5aa0; margin-bottom: 10px;\">Concierge</div>\n                                    <div style=\"color: #495057; font-weight: 500;\">\n                                        <a href=\"mailto:concierge@yourhotel.com\" style=\"color: #2c5aa0; text-decoration: none;\">concierge@yourhotel.com</a>\n                                    </div>\n                                </div>\n                            </td>\n                        </tr>\n                    </table>\n                </div>\n                \n            </td>\n        </tr>\n        \n        <!-- Footer -->\n        <tr>\n            <td style=\"background: #2c5aa0; color: white; padding: 30px 40px; text-align: center;\">\n                <div style=\"font-size: 18px; margin-bottom: 15px;\">We can't wait to make your stay memorable!</div>\n                <div style=\"opacity: 0.9; font-style: italic;\">\n                    Warm regards,<br>\n                    <strong>The [Hotel Name] Team</strong>\n                </div>\n            </td>\n        </tr>\n        \n    </table>\n    \n</body>\n</html>\n",
+        "options": {},
+        "subject": "Welcome to Hotel - Your Stay Begins Soon! 🏨"
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "NaIYTcsDtoNYLBYA",
+          "name": "Gmail account"
+        }
+      },
+      "typeVersion": 2.1
+    },
+    {
+      "id": "1e7320e3-3824-4151-833c-77c8565852d8",
+      "name": "Write Review",
+      "type": "n8n-nodes-base.gmail",
+      "position": [
+        1712,
+        848
+      ],
+      "webhookId": "0ad03fe4-6be0-4c11-8087-9c62cfeab4b1",
+      "parameters": {
+        "sendTo": "={{ $('Filter Upcoming Guest').item.json['Guest Email'] }}",
+        "message": "=<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Thank You for Your Stay - Share Your Experience</title>\n</head>\n<body style=\"font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; background-color: #f4f7fa; margin: 0; padding: 20px 0;\">\n    \n    <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" style=\"max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);\">\n        \n        <!-- Header -->\n        <tr>\n            <td style=\"background: linear-gradient(135deg, #2c5aa0 0%, #1e3a5f 100%); background-color: #2c5aa0; color: white; padding: 30px 40px; text-align: center;\">\n                <h1 style=\"font-size: 28px; margin: 0 0 10px 0; font-weight: 300;\">{{ $('Edit Fields').item.json['Hotel Name'] }}</h1>\n                <p style=\"font-size: 16px; opacity: 0.9; margin: 0;\">Thank You for Choosing Us</p>\n            </td>\n        </tr>\n        \n        <!-- Main Content -->\n        <tr>\n            <td style=\"padding: 40px;\">\n                \n                <!-- Greeting -->\n                <div style=\"font-size: 18px; color: #333; margin-bottom: 20px;\">\n                    Dear <strong>{{ $json['Guest Name'] }}</strong>,\n                </div>\n                \n                <!-- Thank You Message -->\n                <div style=\"background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%); background-color: #e8f5e8; border-left: 4px solid #28a745; padding: 20px; margin: 25px 0; border-radius: 8px;\">\n                    <p style=\"color: #155724; font-weight: 500; margin: 0;\">🙏 Thank you for staying with us from {{ $json['Check-in Date'] }} to {{ $json['Check-out Date'] }}. We hope you had a wonderful experience!</p>\n                </div>\n                \n                <!-- Review Request Section -->\n                <div style=\"margin: 30px 0;\">\n                    <h2 style=\"display: flex; align-items: center; font-size: 20px; color: #2c5aa0; margin-bottom: 20px; font-weight: 600;\">\n                        <span style=\"margin-right: 12px; font-size: 24px;\">⭐</span>\n                        Share Your Experience\n                    </h2>\n                    \n                    <div style=\"background: #f8f9fa; border-radius: 8px; padding: 25px; text-align: center;\">\n                        <p style=\"color: #495057; font-size: 16px; margin-bottom: 25px;\">Your feedback helps us improve and helps future guests make informed decisions. Would you mind taking a moment to share your experience?</p>\n                        \n                        <!-- Google Review Button -->\n                        <div style=\"margin: 20px 0;\">\n                            <a href=\"https://g.page/r/[YOUR_GOOGLE_BUSINESS_ID]/review\" style=\"display: inline-block; background: linear-gradient(135deg, #4285f4 
