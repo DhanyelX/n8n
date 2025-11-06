@@ -1,0 +1,170 @@
+{
+  "name": "AI Sales + Telegram Admin Agent",
+  "nodes": [
+    {
+      "id": "1",
+      "name": "WhatsApp Trigger",
+      "type": "n8n-nodes-base.whatsAppTrigger",
+      "typeVersion": 1,
+      "position": [-600, 0],
+      "credentials": { "whatsAppTriggerApi": { "id": "1", "name": "WhatsApp account" } }
+    },
+    {
+      "id": "2",
+      "name": "Telegram Trigger (Admin)",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1,
+      "position": [-600, 300],
+      "credentials": { "telegramApi": { "id": "2", "name": "Telegram Bot" } },
+      "parameters": { "updates": ["message"] }
+    },
+    {
+      "id": "3",
+      "name": "Gemini Sales Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [-300, 0],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$json.messages[0].text.body}}",
+        "options": {
+          "systemMessage": "You are Zara, the AI sales assistant. Use the Inventory and Orders data stores to check stock, create orders, and answer FAQs. Always confirm before placing orders. Be warm and professional."
+        }
+      }
+    },
+    {
+      "id": "4",
+      "name": "Gemini Admin Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [-300, 300],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$json.message.text}}",
+        "options": {
+          "systemMessage": "You are Zara Admin, the management assistant. You help the owner manage inventory and orders via Telegram. You can add, delete, or list inventory items, and view orders. Always confirm before deleting."
+        }
+      }
+    },
+    {
+      "id": "5",
+      "name": "Inventory Store",
+      "type": "n8n-nodes-base.dataStore",
+      "typeVersion": 1,
+      "position": [0, -200],
+      "parameters": { "operation": "getAll", "dataStoreName": "Inventory" }
+    },
+    {
+      "id": "6",
+      "name": "Orders Store",
+      "type": "n8n-nodes-base.dataStore",
+      "typeVersion": 1,
+      "position": [0, -50],
+      "parameters": { "operation": "getAll", "dataStoreName": "Orders" }
+    },
+    {
+      "id": "7",
+      "name": "Write to Orders Store",
+      "type": "n8n-nodes-base.dataStore",
+      "typeVersion": 1,
+      "position": [200, -50],
+      "parameters": {
+        "operation": "upsert",
+        "dataStoreName": "Orders",
+        "fields": {
+          "id": "={{$fromAI('Order_ID', '', 'string')}}",
+          "customer_name": "={{$fromAI('Customer_Name', '', 'string')}}",
+          "product_name": "={{$fromAI('Product_Name', '', 'string')}}",
+          "quantity": "={{$fromAI('Quantity', '', 'string')}}",
+          "total": "={{$fromAI('Total', '', 'string')}}",
+          "status": "={{$fromAI('Status', '', 'string')}}"
+        }
+      }
+    },
+    {
+      "id": "8",
+      "name": "Write to Inventory Store (Admin)",
+      "type": "n8n-nodes-base.dataStore",
+      "typeVersion": 1,
+      "position": [200, 300],
+      "parameters": {
+        "operation": "upsert",
+        "dataStoreName": "Inventory",
+        "fields": {
+          "id": "={{$fromAI('Product_ID', '', 'string')}}",
+          "name": "={{$fromAI('Product_Name', '', 'string')}}",
+          "price": "={{$fromAI('Price', '', 'string')}}",
+          "stock": "={{$fromAI('Stock', '', 'string')}}",
+          "color": "={{$fromAI('Color', '', 'string')}}"
+        }
+      }
+    },
+    {
+      "id": "9",
+      "name": "Send WhatsApp Message",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [400, 0],
+      "credentials": { "whatsAppApi": { "id": "1", "name": "WhatsApp account" } },
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "={{$('WhatsApp Trigger').item.json.metadata.phone_number_id}}",
+        "recipientPhoneNumber": "={{$('WhatsApp Trigger').item.json.messages[0].from}}",
+        "textBody": "={{$json.output}}"
+      }
+    },
+    {
+      "id": "10",
+      "name": "Send Telegram Message",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [400, 300],
+      "credentials": { "telegramApi": { "id": "2", "name": "Telegram Bot" } },
+      "parameters": {
+        "chatId": "={{$json.message.chat.id}}",
+        "text": "={{$json.output}}"
+      }
+    },
+    {
+      "id": "11",
+      "name": "Gemini Language Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [-450, 150],
+      "credentials": { "googlePalmApi": { "id": "3", "name": "Google Gemini(PaLM) Api account" } }
+    }
+  ],
+  "connections": {
+    "WhatsApp Trigger": {
+      "main": [{ "node": "Gemini Sales Agent", "type": "main", "index": 0 }]
+    },
+    "Telegram Trigger (Admin)": {
+      "main": [{ "node": "Gemini Admin Agent", "type": "main", "index": 0 }]
+    },
+    "Gemini Sales Agent": {
+      "main": [{ "node": "Write to Orders Store", "type": "main", "index": 0 }],
+      "ai_tool": [
+        { "node": "Inventory Store", "type": "ai_tool", "index": 0 },
+        { "node": "Orders Store", "type": "ai_tool", "index": 1 }
+      ],
+      "ai_languageModel": [{ "node": "Gemini Language Model", "type": "ai_languageModel", "index": 0 }]
+    },
+    "Gemini Admin Agent": {
+      "main": [{ "node": "Write to Inventory Store (Admin)", "type": "main", "index": 0 }],
+      "ai_tool": [
+        { "node": "Inventory Store", "type": "ai_tool", "index": 0 },
+        { "node": "Orders Store", "type": "ai_tool", "index": 1 }
+      ],
+      "ai_languageModel": [{ "node": "Gemini Language Model", "type": "ai_languageModel", "index": 0 }]
+    },
+    "Write to Orders Store": {
+      "main": [{ "node": "Send WhatsApp Message", "type": "main", "index": 0 }]
+    },
+    "Write to Inventory Store (Admin)": {
+      "main": [{ "node": "Send Telegram Message", "type": "main", "index": 0 }]
+    }
+  },
+  "active": true,
+  "settings": { "executionOrder": "v1" },
+  "versionId": "ai-combined-agent-v1"
+}
