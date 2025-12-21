@@ -151,6 +151,72 @@ serve(async (req) => {
     const isImageMessage = !!data.message.imageMessage;
     console.log('Is image message?', isImageMessage);
 
+    // Handle image messages
+if (isImageMessage && data.message.imageMessage) {
+  console.log('Processing image message...')
+  
+  const imageMessage = data.message.imageMessage
+  const imageCaption = imageMessage.caption || ''
+  const mimetype = imageMessage.mimetype || 'image/jpeg'
+  
+  // Download image from Evolution API
+  const mediaKey = imageMessage.url || data.key?.id
+  
+  if (mediaKey) {
+    try {
+      // Fetch the image from Evolution API
+      const mediaRes = await fetch(`${EVO_URL}/message/download/${instanceId}/${mediaKey}`, {
+        method: 'GET',
+        headers: { 'apikey': EVO_KEY }
+      })
+      
+      if (mediaRes.ok) {
+        const imageBlob = await mediaRes.blob()
+        const arrayBuffer = await imageBlob.arrayBuffer()
+        const base64Image = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
+        
+        // Store in customer_images table
+        const { error: imgError } = await supabase
+          .from('customer_images')
+          .insert({
+            session_id: finalChatSessionId,
+            lead_id: leadId,
+            instance_id: instance.id,
+            customer_phone: phoneNumber,
+            image_url: `data:${mimetype};base64,${base64Image}`,
+            caption: imageCaption,
+            mime_type: mimetype,
+            forwarded_to_owner: false
+          })
+        
+        if (imgError) {
+          console.error('Failed to save image:', imgError)
+        } else {
+          console.log('Image saved successfully')
+          
+          // Update session metadata if awaiting images
+          if (simpleSessionData?.awaiting_images) {
+            const currentCount = simpleSessionData.images_received_count || 0
+            await supabase
+              .from('sessions')
+              .update({
+                images_received_count: currentCount + 1
+              })
+              .eq('id', simpleSessionId)
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Failed to download/process image:', e)
+    }
+  }
+  
+  // Continue processing with caption as the message text if available
+  if (!imageCaption) {
+    return new Response('OK', { status: 200 })
+  }
+      }
+
     // Use Service Role Key (bypasses RLS)
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
@@ -544,6 +610,30 @@ You are not pretending to be human—but you embody the best of what makes peopl
 
 CRITICAL: DO NOT INVENT PRODUCTS OR INVENTORY. Only reference products listed in the "Available Products" section below. If none are available, respond: "No products available." Do not guess, fabricate, or assume any product beyond those explicitly shown.
 
+## BOOKING HANDLING
+
+When a customer wants to make a booking or appointment:
+1. Collect: name, date, time, service type
+2. Confirm all details with the customer
+3. Once confirmed, respond with: [BOOKING] followed by JSON with these fields:
+   - customer_name
+   - booking_date (ISO format)
+   - booking_time
+   - service_type
+   - notes
+
+Example: [BOOKING] {"customer_name": "John Doe", "booking_date": "2025-01-15T00:00:00Z", "booking_time": "2:00 PM", "service_type": "Consultation", "notes": "First time customer"}
+
+## IMAGE HANDLING
+
+If you need the customer to send images (e.g., for damage assessment, before/after, etc.):
+1. Ask them to send the image(s)
+2. Respond with: [REQUEST_IMAGES] followed by brief description
+   Example: [REQUEST_IMAGES] Please send photos of the damaged area
+
+When customer sends images, acknowledge receipt and proceed with booking or next steps.
+
+
 ## BUSINESS CONTEXT
 
 - **Instance Name:** ${instance?.instance_name || ''}
@@ -618,6 +708,202 @@ ${messageText}
       }
     }
 
+    // Check for [BOOKING] and save to database
+const bookingMatch = aiResponse.match(/\[BOOKING\] ({[\s\S]*?})/);
+if (bookingMatch && leadId) {
+  try {
+    const bookingData = JSON.parse(bookingMatch[1]);
+    
+    const newBookingId = uuidv4();
+    const { error: bookingError } = await supabase
+      .from('bookings')
+      .insert({
+        id: newBookingId,
+        user_id: instance.user_id,
+        lead_id: leadId,
+        session_id: finalChatSessionId,
+        instance_id: instance.id,
+        customer_name: bookingData.customer_name,
+        customer_phone: phoneNumber,
+        service_type: bookingData.service_type,
+        booking_date: bookingData.booking_date,
+        booking_time: bookingData.booking_time,
+        notes: bookingData.notes,
+        status: 'pending'
+      });
+    
+    if (bookingError) {
+      console.error('Failed to create booking:', bookingError);
+    } else {
+      console.log('Booking created:', newBookingId);
+      
+      // Send notification to handover phone with booking details and recent image
+      if (config?.handover_phone) {
+        const handoverNumber = config.handover_phone.endsWith('@s.whatsapp.net') 
+          ? config.handover_phone 
+          : `${config.handover_phone}@s.whatsapp.net`;
+        
+        let bookingSummary = `📅 NEW BOOKING from ${bookingData.customer_name} (${phoneNumber})\n\n`;
+        bookingSummary += `Service: ${bookingData.service_type}\n`;
+        bookingSummary += `Date: ${bookingData.booking_date}\n`;
+        bookingSummary += `Time: ${bookingData.booking_time}\n`;
+        if (bookingData.notes) bookingSummary += `Notes: ${bookingData.notes}\n`;
+        
+        // Get most recent image from this session
+        const { data: recentImage } = await supabase
+          .from('customer_images')
+          .select('image_url, caption')
+          .eq('session_id', finalChatSessionId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+        
+        if (recentImage?.image_url) {
+          bookingSummary += `\n📸 Customer sent an image (see below)`;
+          if (recentImage.caption) bookingSummary += `\nCaption: ${recentImage.caption}`;
+        }
+        
+        // Send text summary
+        await fetch(`${EVO_URL}/message/sendText/${instanceId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': EVO_KEY },
+          body: JSON.stringify({
+            number: handoverNumber,
+            text: bookingSummary,
+            delay: 1200
+          })
+        });
+        
+        // Send image if available
+        if (recentImage?.image_url && recentImage.image_url.startsWith('data:image')) {
+          const base64Data = recentImage.image_url.split(',')[1];
+          await fetch(`${EVO_URL}/message/sendMedia/${instanceId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'apikey': EVO_KEY },
+            body: JSON.stringify({
+              number: handoverNumber,
+              mediatype: 'image',
+              media: base64Data,
+              delay: 1500
+            })
+          });
+        }
+      }
+    }
+    
+    // Remove [BOOKING] tag from customer-facing response
+    aiResponse = aiResponse.replace(/\[BOOKING\] {[\s\S]*?}/, '').trim();
+  } catch (e) {
+    console.error('Failed to parse/create booking:', e);
+  }
+}
+
+    // Check for [BOOKING] and save to database
+const bookingMatch = aiResponse.match(/\[BOOKING\] ({[\s\S]*?})/);
+if (bookingMatch && leadId) {
+  try {
+    const bookingData = JSON.parse(bookingMatch[1]);
+    
+    const newBookingId = uuidv4();
+    const { error: bookingError } = await supabase
+      .from('bookings')
+      .insert({
+        id: newBookingId,
+        user_id: instance.user_id,
+        lead_id: leadId,
+        session_id: finalChatSessionId,
+        instance_id: instance.id,
+        customer_name: bookingData.customer_name,
+        customer_phone: phoneNumber,
+        service_type: bookingData.service_type,
+        booking_date: bookingData.booking_date,
+        booking_time: bookingData.booking_time,
+        notes: bookingData.notes,
+        status: 'pending'
+      });
+    
+    if (bookingError) {
+      console.error('Failed to create booking:', bookingError);
+    } else {
+      console.log('Booking created:', newBookingId);
+      
+      // Send notification to handover phone with booking details and recent image
+      if (config?.handover_phone) {
+        const handoverNumber = config.handover_phone.endsWith('@s.whatsapp.net') 
+          ? config.handover_phone 
+          : `${config.handover_phone}@s.whatsapp.net`;
+        
+        let bookingSummary = `📅 NEW BOOKING from ${bookingData.customer_name} (${phoneNumber})\n\n`;
+        bookingSummary += `Service: ${bookingData.service_type}\n`;
+        bookingSummary += `Date: ${bookingData.booking_date}\n`;
+        bookingSummary += `Time: ${bookingData.booking_time}\n`;
+        if (bookingData.notes) bookingSummary += `Notes: ${bookingData.notes}\n`;
+        
+        // Get most recent image from this session
+        const { data: recentImage } = await supabase
+          .from('customer_images')
+          .select('image_url, caption')
+          .eq('session_id', finalChatSessionId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+        
+        if (recentImage?.image_url) {
+          bookingSummary += `\n📸 Customer sent an image (see below)`;
+          if (recentImage.caption) bookingSummary += `\nCaption: ${recentImage.caption}`;
+        }
+        
+        // Send text summary
+        await fetch(`${EVO_URL}/message/sendText/${instanceId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': EVO_KEY },
+          body: JSON.stringify({
+            number: handoverNumber,
+            text: bookingSummary,
+            delay: 1200
+          })
+        });
+        
+        // Send image if available
+        if (recentImage?.image_url && recentImage.image_url.startsWith('data:image')) {
+          const base64Data = recentImage.image_url.split(',')[1];
+          await fetch(`${EVO_URL}/message/sendMedia/${instanceId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'apikey': EVO_KEY },
+            body: JSON.stringify({
+              number: handoverNumber,
+              mediatype: 'image',
+              media: base64Data,
+              delay: 1500
+            })
+          });
+        }
+      }
+    }
+    
+    // Remove [BOOKING] tag from customer-facing response
+    aiResponse = aiResponse.replace(/\[BOOKING\] {[\s\S]*?}/, '').trim();
+  } catch (e) {
+    console.error('Failed to parse/create booking:', e);
+  }
+}
+
+// Check for [REQUEST_IMAGES] and update session state
+if (aiResponse.includes('[REQUEST_IMAGES]')) {
+  const requestMatch = aiResponse.match(/\[REQUEST_IMAGES\] (.*)/);
+  if (requestMatch) {
+    await supabase
+      .from('sessions')
+      .update({
+        awaiting_images: true,
+        image_request_description: requestMatch[1],
+        images_received_count: 0
+      })
+      .eq('id', simpleSessionId);
+    
+    aiResponse = aiResponse.replace(/\[REQUEST_IMAGES\] .*/, '').trim();
+  }
+}
     // Check for [UPDATE] and store key details in leads.notes
     const updateMatch = aiResponse.match(/\[UPDATE\] ([\s\S]*)/);
     if (updateMatch && leadId) {
