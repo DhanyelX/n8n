@@ -1,0 +1,619 @@
+{
+  "name": "GMB Bot Demo",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "account": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "location": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "type": "n8n-nodes-base.googleBusinessProfileTrigger",
+      "typeVersion": 1,
+      "position": [
+        -800,
+        20
+      ],
+      "id": "ac287218-fae6-47cf-80a9-c559cac285ed",
+      "name": "Google Business Profile Trigger",
+      "credentials": {
+        "googleBusinessProfileOAuth2Api": {
+          "id": "58XA98fx0xNfYaiv",
+          "name": "Google Business Profile account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.canva.com/rest/v1/asset-uploads",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Asset-Upload-Metadata",
+              "value": "{ \"name_base64\": \"TXkgQXdlc29tZSBVcGxvYWQg8J+agA==\" }"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/octet-stream"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        20
+      ],
+      "id": "be811023-e78b-47f0-8fa1-112cb46b7517",
+      "name": "HTTP Request11",
+      "retryOnFail": true,
+      "credentials": {
+        "oAuth2Api": {
+          "id": "OUJjjCfFVurb2wAV",
+          "name": "Canva"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0e9ca1e0-9df2-460b-9e59-d1e70611c19c",
+              "leftValue": "={{ $json.starRating }}",
+              "rightValue": "FIVE",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -560,
+        20
+      ],
+      "id": "c4cf063b-6fd0-4665-8898-305973467c95",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Google Business Profile Trigger').item.json.reviewer.profilePhotoUrl }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        620,
+        20
+      ],
+      "id": "7ef2f12e-b3fd-49f9-b322-0aa5e39e4639",
+      "name": "HTTP Request12"
+    },
+    {
+      "parameters": {
+        "amount": 15
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1020,
+        20
+      ],
+      "id": "fc7c587b-8f68-4af4-a670-17f6b9055c17",
+      "name": "Wait4",
+      "webhookId": "3d65c7e9-58e9-465d-8d50-b433bca0f69f"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.canva.com/rest/v1/asset-uploads/{{ $json.job.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1240,
+        20
+      ],
+      "id": "3236e391-b9e0-4cdf-9d2a-cf0a8e7d2f0f",
+      "name": "HTTP Request13",
+      "retryOnFail": true,
+      "credentials": {
+        "oAuth2Api": {
+          "id": "OUJjjCfFVurb2wAV",
+          "name": "Canva"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.canva.com/rest/v1/autofills",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"brand_template_id\": \"DAGpllR5bEk\",\n  \"data\":{\n    \"review\": {\n      \"type\": \"text\",\n      \"text\": \"{{ $('Google Business Profile Trigger').item.json.comment }}\"\n    },\n    \"name\": {\n      \"type\": \"text\",\n      \"text\": \"-{{ $('Code').item.json.firstName }}\"\n    },\n    \"image\": {\n      \"type\": \"image\",\n      \"asset_id\": \"{{ $json.job.asset.id }}\"\n    }\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1460,
+        20
+      ],
+      "id": "5b3b0c31-996a-4f20-bd00-150390e18736",
+      "name": "HTTP Request14",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "OUJjjCfFVurb2wAV",
+          "name": "Canva"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.canva.com/rest/v1/autofills/{{ $json.job.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1840,
+        20
+      ],
+      "id": "42e133b5-a0a0-40ea-9c14-0ff78d8d28bd",
+      "name": "HTTP Request15",
+      "retryOnFail": true,
+      "credentials": {
+        "oAuth2Api": {
+          "id": "OUJjjCfFVurb2wAV",
+          "name": "Canva"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.canva.com/rest/v1/exports",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"design_id\": \"{{ $json.job.result.design.id }}\",\n  \"format\": {\n    \"type\": \"png\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2040,
+        20
+      ],
+      "id": "75b686de-ff0e-4489-a83f-8639bf166e56",
+      "name": "HTTP Request16",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "OUJjjCfFVurb2wAV",
+          "name": "Canva"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 15
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2220,
+        20
+      ],
+      "id": "0d6ef415-9aa9-4eb1-bccb-e53d51c66569",
+      "name": "Wait5",
+      "webhookId": "3d65c7e9-58e9-465d-8d50-b433bca0f69f"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.canva.com/rest/v1/exports/{{ $json.job.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2400,
+        20
+      ],
+      "id": "f229a272-a73b-4102-b709-fba9ee2372d4",
+      "name": "HTTP Request17",
+      "retryOnFail": true,
+      "credentials": {
+        "oAuth2Api": {
+          "id": "OUJjjCfFVurb2wAV",
+          "name": "Canva"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.job.urls[0] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2580,
+        20
+      ],
+      "id": "2a16c62a-91de-4530-a892-f1578692cc46",
+      "name": "HTTP Request18"
+    },
+    {
+      "parameters": {
+        "jsCode": "for (const item of $input.all()) {\n  // Grab the displayName from reviewer object\n  const displayName = item.json.reviewer?.displayName || '';\n  // Split and grab first name\n  const firstName = displayName.split(' ')[0] || '';\n  // Attach it to the item for later use\n  item.json.firstName = firstName;\n}\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -300,
+        -160
+      ],
+      "id": "0fb38995-3f11-4dbf-b54f-6ac0a5335e94",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4a8276aa-abe4-4011-9878-ab481c55c686",
+              "name": "BusinessName",
+              "value": "The Hardware Store",
+              "type": "string"
+            },
+            {
+              "id": "900c1754-5e2b-402a-b467-84c05865323a",
+              "name": "BusinessNiche",
+              "value": "Hardware Retail Store",
+              "type": "string"
+            },
+            {
+              "id": "73ba0ae9-b91c-4e21-801f-52d757813bac",
+              "name": "PhoneNumber",
+              "value": "226-888-0000",
+              "type": "string"
+            },
+            {
+              "id": "56348fd5-49b4-478e-9226-037bd70b7ccf",
+              "name": "Email",
+              "value": "info@thehardwarestore.com",
+              "type": "string"
+            },
+            {
+              "id": "c9f84129-da6c-48c5-82bf-39ae28b40f74",
+              "name": "Website",
+              "value": "thehardwarestore.com",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -80,
+        -160
+      ],
+      "id": "5a625401-265f-47f0-abc9-16b45a78d385",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Role\n\nYou are a world-class social media copywriter and brand voice specialist for {{ $json.BusinessName }}. You specialize in transforming customer reviews into compelling social media captions. You’re especially great at capturing an informal, friendly tone and tailoring content for platforms like Facebook, Instagram, and Google My Business.\n\n⸻\n\nTask\n\nGenerate a short, engaging social media caption based on a 5-star Google review. The caption should summarize the review in an enthusiastic, conversational tone without referring to the company as “I” or “we.” Always refer to the customer by name and highlight the sentiment and main points of the review using contractions and casual language. Ensure the tone stays consistently friendly, informal, and aligned with {{ $json.BusinessName }}’ brand as a fun, helpful {{ $json.BusinessNiche }} business.\n\n⸻\n\nSpecifics\n\t•\tSpeak in a friendly and informal tone.\n\t•\tDo not refer to the company in the first person (avoid “I”, “we”, etc.).\n\t•\tAlways mention the reviewer by name.\n\t•\tSummarize the review in 1–2 short, natural-sounding sentences.\n\t•\tMake the caption suitable for Facebook, Instagram, and Google My Business.\n\t•\tUse contractions where possible to keep it casual.\n\t•\tMaintain tone consistency in every output.\n\t•\tThis task is vital to the brand’s tone, so please make sure the output is well-polished and reflects the review faithfully.\n\n⸻\n\nTools\n\nUse the provided customer review text as the only source of inspiration. You do not need to reference any external data.\n\n⸻\n\nExamples\n\nReview:\n“Cannot say enough about this place. They have everything and even stuff you didn’t realize you needed. Great prices and friendly staff.”\n\nCaption Output:\nThanks so much, Quincey! 🙌 We love hearing how much you enjoyed the hunt — from awesome deals to surprise finds and friendly faces, it’s what {{ $json.BusinessName }} is all about!\n\n⸻\n\nNotes\n\t•\tFollow this structure 100% — no deviations.\n\t•\tStick closely to the review content without adding unrelated flair.\n\t•\tKeep it short, snappy, and platform-ready.\n\t•\tAlways run a mental check to ensure tone and summary feel natural and cohesive.",
+              "role": "system"
+            },
+            {
+              "content": "=Reviewer Name: {{ $('Code').item.json.firstName }}\nReview Stars: {{ $('Code').item.json.starRating }}\nReview: {{ $('Code').item.json.comment }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        140,
+        -160
+      ],
+      "id": "09e28173-c1ec-48c1-b5d2-c57749e01c02",
+      "name": "OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "WqobtaGNRbT99K1x",
+          "name": "OpenAi General"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const randWait = Math.floor(Math.random() * 420) + 60;\nreturn [\n  {\n    json: {\n      randomWait: randWait\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        580,
+        -740
+      ],
+      "id": "cf79cf0e-a48a-45e2-adda-595c5ea0d03b",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "account": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "location": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "type": "n8n-nodes-base.googleBusinessProfileTrigger",
+      "typeVersion": 1,
+      "position": [
+        -880,
+        -720
+      ],
+      "id": "32196687-7166-4c32-8b2e-b50c449e4233",
+      "name": "Google Business Profile Trigger1",
+      "credentials": {
+        "googleBusinessProfileOAuth2Api": {
+          "id": "d4UPfa9uw4LT2tzZ",
+          "name": "Google Business Profile account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Google Business Profile Trigger1').item.json.starRating }}",
+                    "rightValue": "FIVE",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "8ea6a3e5-4ff5-4353-b317-c543a645c078"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "5"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "ae9960c8-5410-4033-ac5b-211e9f7fa193",
+                    "leftValue": "={{ $('Google Business Profile Trigger1').item.json.starRating }}",
+                    "rightValue": "FOUR",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "4"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "e2b69ed0-6ec6-4ac8-93a0-8041aa8b6449",
+                    "leftValue": "={{ $('Google Business Profile Trigger1').item.json.starRating }}",
+                    "rightValue": "THREE",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "3"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "8df9df8d-8467-41c1-ae4b-99c00b4e6c30",
+                    "leftValue": "={{ $('Google Business Profile Trigger1').item.json.starRating }}",
+                    "rightValue": "TWO",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "2"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "038f3920-350d-4ec9-8a06-8eb08edc9ea4",
+                    "leftValue": "={{ $('Google Business Profile Trigger1').item.json.starRating }}",
+                    "rightValue": "ONE",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -200,
+        -760
+      ],
+      "id": "cfa3f9cc-3740-440e-8f62-cd4009771949",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=#Role\n\nYou are a world-class Google Review Response Expert for a {{ $json.BusinessNiche }} business. You understand how to naturally weave SEO keywords into review responses, adapt tone based on review sentiment, and maintain a friendly, professional voice that reinforces positive brand perception. You are highly skilled at subtly optimizing content for search visibility without sounding un
